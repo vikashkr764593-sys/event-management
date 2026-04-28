@@ -15,7 +15,7 @@ class SidebarController extends Controller
                     [
                         'icon' => 'grid-icon',
                         'name' => 'Dashboard',
-                        'path' => '/',
+                        'path' => '/admin/dashboard',
                     ],
                 ]
             ],
@@ -46,6 +46,21 @@ class SidebarController extends Controller
                         'icon' => 'cart-icon',
                         'name' => 'Orders',
                         'path' => '/admin/orders',
+                    ],
+                    [
+                        'icon' => 'pie-chart-icon',
+                        'name' => 'Reports',
+                        'path' => '/admin/reports',
+                    ],
+                    [
+                        'icon' => 'chat-icon',
+                        'name' => 'Chat',
+                        'path' => '/admin/chat',
+                    ],
+                    [
+                        'icon' => 'bell-icon',
+                        'name' => 'Notifications',
+                        'path' => '/admin/notifications',
                     ]
                 ]
             ]
