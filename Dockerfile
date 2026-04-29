@@ -15,6 +15,10 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
+# Install Node.js (for compiling Vite assets)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+
 # Enable Apache mod_rewrite for Laravel routing
 RUN a2enmod rewrite
 
@@ -37,6 +41,9 @@ COPY . .
 
 # Install PHP dependencies
 RUN composer install --optimize-autoloader --no-dev
+
+# Install NPM dependencies and build production assets
+RUN npm install && npm run build
 
 # Set permissions for storage and bootstrap/cache so Apache can write to them
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
