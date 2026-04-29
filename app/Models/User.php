@@ -15,6 +15,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string $name
  * @property string $email
  * @property string $phone
+ * @property string|null $profile_picture
  * @property string|null $email_verified_at
  * @property string $password
  * @property string $role
@@ -34,6 +35,7 @@ class User extends Authenticatable
         'name',
         'email',
         'phone',
+        'profile_picture',
         'password',
         'role',
     ];
@@ -59,6 +61,26 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
         ];
+    }
+
+    /**
+     * Get the URL for the user's profile picture.
+     * Falls back to a generated avatar using UI Avatars service.
+     */
+    public function getProfilePictureUrlAttribute(): string
+    {
+        if ($this->profile_picture) {
+            // Support both full URLs and local storage paths
+            if (str_starts_with($this->profile_picture, 'http')) {
+                return $this->profile_picture;
+            }
+
+            return asset('storage/' . $this->profile_picture);
+        }
+
+        // Generate a deterministic avatar from the user's initials
+        $name = urlencode($this->name);
+        return "https://ui-avatars.com/api/?name={$name}&background=4f46e5&color=ffffff&size=128&font-size=0.4&bold=true";
     }
 
     /**

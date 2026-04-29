@@ -1,0 +1,14 @@
+.git
+.idea
+.vscode
+vendor
+node_modules
+npm-debug.log
+yarn-error.log
+.env
+.env.example
+storage/*.key
+tests
+phpunit.xml
+Dockerfile
+docker-entrypoint.sh

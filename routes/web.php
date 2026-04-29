@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Web\AdminAuthController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\ProfileController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminSingerController;
 use App\Http\Controllers\Admin\AdminInstrumentController;
@@ -30,6 +31,13 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/chat', [DashboardController::class, 'chat'])->name('chat');
     Route::get('/notifications', [DashboardController::class, 'notifications'])->name('notifications');
     Route::get('/reports', [DashboardController::class, 'reports'])->name('reports');
+
+    // Profile & Account Routes
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/settings', [ProfileController::class, 'settings'])->name('settings');
+    Route::patch('/settings/password', [ProfileController::class, 'updatePassword'])->name('settings.password');
+    Route::get('/support', [ProfileController::class, 'support'])->name('support');
 
     // CRUD Management (Resources)
     Route::resource('users', AdminUserController::class);

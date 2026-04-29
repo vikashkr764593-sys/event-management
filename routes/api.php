@@ -1,7 +1,9 @@
 <?php
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\RegistrationController;
 use App\Http\Controllers\Api\SingerController;
 use App\Http\Controllers\Api\InstrumentController;
 use App\Http\Controllers\Api\BookingController;
@@ -17,6 +19,8 @@ use App\Http\Controllers\Api\ApprovalController;
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/send-otp', [AuthController::class, 'sendOtp']);
 Route::post('/auth/verify-otp', [AuthController::class, 'verifyOtp']);
+Route::post('/auth/register/initiate', [RegistrationController::class, 'preRegister']);
+Route::post('/auth/register/webhook', [RegistrationController::class, 'webhook']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
