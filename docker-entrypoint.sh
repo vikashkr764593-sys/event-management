@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Run database migrations FIRST so tables like 'cache' exist
+php artisan migrate --force
+
 # Clear caches
 php artisan optimize:clear
 
@@ -8,10 +11,6 @@ php artisan optimize:clear
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
-
-# Run database migrations
-# Force is required to run migrations in production
-php artisan migrate --force
 
 # Start Apache in foreground
 exec apache2-foreground
