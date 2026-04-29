@@ -1,3 +1,5 @@
+@props(['user'])
+
 <div x-data="{saveProfile(){
     console.log('Saving profile...');
 }}">

@@ -1,3 +1,5 @@
+@props(['user'])
+
 <div x-data="{saveProfile(){
     console.log('Saving profile...');
 }}">
@@ -10,13 +12,12 @@
 
                 <div class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
                     <div>
-                        <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">First Name</p>
-                        <p class="text-sm font-medium text-gray-800 dark:text-white/90">Musharof</p>
+                        <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Full Name</p>
+                        <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ $user->name }}</p>
                     </div>
 
-                    <div>
-                        <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Last Name</p>
-                        <p class="text-sm font-medium text-gray-800 dark:text-white/90">Chowdhury</p>
+                    <div class="hidden">
+                        <!-- Removed Last Name since we only have 'name' -->
                     </div>
 
                     <div>
@@ -24,18 +25,18 @@
                             Email address
                         </p>
                         <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-                            randomuser@pimjo.com
+                            {{ $user->email }}
                         </p>
                     </div>
 
                     <div>
                         <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Phone</p>
-                        <p class="text-sm font-medium text-gray-800 dark:text-white/90">+09 363 398 46</p>
+                        <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ $user->phone ?? 'N/A' }}</p>
                     </div>
 
                     <div>
                         <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Bio</p>
-                        <p class="text-sm font-medium text-gray-800 dark:text-white/90">Team Manager</p>
+                        <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ ucfirst($user->role ?? 'Admin') }}</p>
                     </div>
                 </div>
             </div>

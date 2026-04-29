@@ -28,9 +28,13 @@ class Singer extends Model
      */
     protected $fillable = [
         'user_id',
+        'name',
+        'stage_name',
         'genre',
-        'hourly_rate',
-        'bio',
+        'experience_years',
+        'availability_status',
+        'biography',
+        'profile_image',
     ];
 
     /**
@@ -39,8 +43,25 @@ class Singer extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'hourly_rate' => 'float',
+        'experience_years' => 'integer',
     ];
+
+    /**
+     * Get the URL for the singer's profile image.
+     * Falls back to a generated avatar using UI Avatars service.
+     */
+    public function getProfileImageUrlAttribute(): string
+    {
+        if ($this->profile_image) {
+            if (str_starts_with($this->profile_image, 'http')) {
+                return $this->profile_image;
+            }
+            return asset('storage/' . $this->profile_image);
+        }
+
+        $name = urlencode($this->stage_name ?: $this->name ?: 'Singer');
+        return "https://ui-avatars.com/api/?name={$name}&background=10B981&color=ffffff&size=128&font-size=0.4&bold=true";
+    }
 
     /**
      * Get the user profile associated with the singer.
