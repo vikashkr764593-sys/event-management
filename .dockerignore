@@ -10,5 +10,3 @@ yarn-error.log
 storage/*.key
 tests
 phpunit.xml
-Dockerfile
-docker-entrypoint.sh
