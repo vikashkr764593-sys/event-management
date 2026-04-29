@@ -11,7 +11,7 @@ use App\Http\Controllers\Admin\AdminOrderController;
 
 // Redirect root to admin dashboard (or login if unauthenticated)
 Route::get('/', function () {
-    return redirect()->route('admin.dashboard');
+    return redirect()->route('admin.login');
 });
 
 // Admin Authentication Routes
@@ -21,11 +21,11 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admi
 
 // Admin Panel Routes (Protected by Auth)
 // Assuming we will create a middleware 'admin' later, using standard 'auth' for now
-Route::prefix('admin')->name('admin.')->group(function () {
-    
+Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Chat & Notifications Views
     Route::get('/chat', [DashboardController::class, 'chat'])->name('chat');
     Route::get('/notifications', [DashboardController::class, 'notifications'])->name('notifications');
