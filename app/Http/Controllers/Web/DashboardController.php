@@ -19,8 +19,8 @@ class DashboardController extends Controller
     {
         // KPIs
         $totalBookings = Booking::count();
-        $pendingBookings = Booking::where('status', 'Pending')->count();
-        $totalRevenue = Order::where('status', 'approved')->sum('total_amount');
+        $pendingBookings = Booking::where('status', 'pending')->count();
+        $totalRevenue = Order::where('payment_status', 'Paid')->sum('total_amount');
         $outOfStock = Instrument::where('stock', '<=', 0)->count();
 
         // Chart 1: Booking Trends (Grouped by status)
@@ -28,18 +28,18 @@ class DashboardController extends Controller
         
         $bookingChartLabels = ['Pending', 'Approved', 'Rejected'];
         $bookingChartData = [
-            $bookingStatuses['Pending'] ?? 0,
-            $bookingStatuses['Approved'] ?? 0,
-            $bookingStatuses['Rejected'] ?? 0,
+            $bookingStatuses['pending'] ?? 0,
+            $bookingStatuses['approved'] ?? 0,
+            $bookingStatuses['rejected'] ?? 0,
         ];
 
         // Chart 2: Inventory Usage (Grouped by category)
-        $inventoryCategories = Instrument::selectRaw('category, sum(stock) as total_stock')->groupBy('category')->pluck('total_stock', 'category')->toArray();
+        $inventoryCategories = Instrument::leftJoin('categories', 'instruments.category_id', '=', 'categories.id')
+            ->selectRaw('COALESCE(categories.name, "Uncategorized") as category_name, sum(instruments.stock) as total_stock')
+            ->groupBy('category_name')
+            ->pluck('total_stock', 'category_name')
+            ->toArray();
         $inventoryChartLabels = array_keys($inventoryCategories);
-        // Replace empty category with 'Uncategorized'
-        foreach ($inventoryChartLabels as &$label) {
-            if (empty($label)) $label = 'Uncategorized';
-        }
         $inventoryChartData = array_values($inventoryCategories);
 
         return view('pages.dashboard.index', compact(
@@ -58,11 +58,5 @@ class DashboardController extends Controller
 
 
 
-    /**
-     * View the Reports screen
-     */
-    public function reports()
-    {
-        return view('pages.reports.index');
-    }
+
 }

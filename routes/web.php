@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminChatController;
+use App\Http\Controllers\Admin\AdminReportController;
 
 // Redirect root to admin dashboard (or login if unauthenticated)
 Route::get('/', function () {
@@ -43,7 +44,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('/notifications/mark-all-read', [AdminNotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     Route::delete('/notifications/cleanup', [AdminNotificationController::class, 'cleanup'])->name('notifications.cleanup');
     Route::delete('/notifications/{id}', [AdminNotificationController::class, 'destroy'])->name('notifications.destroy');
-    Route::get('/reports', [DashboardController::class, 'reports'])->name('reports');
+    Route::get('/reports', [AdminReportController::class, 'index'])->name('reports');
+    Route::post('/reports/export', [AdminReportController::class, 'export'])->name('reports.export');
 
     // Profile & Account Routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -34,6 +34,7 @@ class Singer extends Model
         'experience_years',
         'availability_status',
         'rating',
+        'fee',
         'biography',
         'profile_image',
     ];

@@ -38,6 +38,7 @@ class AdminSingerController extends Controller {
             'experience_years'    => 'nullable|integer|min:0',
             'availability_status' => 'required|string|in:available,unavailable,busy',
             'rating'              => 'nullable|numeric|min:0|max:5',
+            'fee'                 => 'nullable|numeric|min:0',
             'biography'           => 'nullable|string',
             'profile_image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
@@ -68,6 +69,7 @@ class AdminSingerController extends Controller {
             'experience_years'    => 'nullable|integer|min:0',
             'availability_status' => 'required|string|in:available,unavailable,busy',
             'rating'              => 'nullable|numeric|min:0|max:5',
+            'fee'                 => 'nullable|numeric|min:0',
             'biography'           => 'nullable|string',
             'profile_image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
