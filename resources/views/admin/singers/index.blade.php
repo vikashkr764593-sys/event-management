@@ -41,7 +41,7 @@
                         <tr class="text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
                             <th class="px-6 py-4 border-b border-gray-200 dark:border-gray-800">Profile</th>
                             <th class="px-6 py-4 border-b border-gray-200 dark:border-gray-800">Genre</th>
-                            <th class="px-6 py-4 border-b border-gray-200 dark:border-gray-800">Experience</th>
+                            <th class="px-6 py-4 border-b border-gray-200 dark:border-gray-800">Stats</th>
                             <th class="px-6 py-4 text-right border-b border-gray-200 dark:border-gray-800">Actions</th>
                         </tr>
                     </thead>
@@ -74,11 +74,16 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                {{ $singer->experience_years ? $singer->experience_years . ' Years' : '0 Years' }}
-                                <br>
-                                <span class="text-xs {{ $singer->availability_status === 'available' ? 'text-success-500' : ($singer->availability_status === 'busy' ? 'text-warning-500' : 'text-gray-400') }} capitalize">
-                                    {{ $singer->availability_status }}
-                                </span>
+                                <div>Exp: {{ $singer->experience_years ? $singer->experience_years . ' Years' : '0 Years' }}</div>
+                                <div class="mt-1 flex items-center">
+                                    <span class="text-warning-500 mr-1">★</span>
+                                    <span>{{ number_format($singer->rating, 1) }}</span>
+                                </div>
+                                <div class="mt-1">
+                                    <span class="text-xs {{ $singer->availability_status === 'available' ? 'text-success-500' : ($singer->availability_status === 'busy' ? 'text-warning-500' : 'text-gray-400') }} capitalize">
+                                        {{ $singer->availability_status }}
+                                    </span>
+                                </div>
                             </td>
                             <td class="px-6 py-4 text-right text-sm font-medium relative" x-data="{ open: false }">
                                 <button @click="open = !open" @click.outside="open = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">

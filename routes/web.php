@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\AdminSingerController;
 use App\Http\Controllers\Admin\AdminInstrumentController;
 use App\Http\Controllers\Admin\AdminBookingController;
 use App\Http\Controllers\Admin\AdminOrderController;
+use App\Http\Controllers\Admin\AdminCategoryController;
 
 // Redirect root to admin dashboard (or login if unauthenticated)
 Route::get('/', function () {
@@ -43,6 +44,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::resource('users', AdminUserController::class);
     Route::resource('singers', AdminSingerController::class);
     Route::resource('instruments', AdminInstrumentController::class);
+    Route::resource('categories', AdminCategoryController::class);
     Route::resource('bookings', AdminBookingController::class);
     Route::resource('orders', AdminOrderController::class);
 });

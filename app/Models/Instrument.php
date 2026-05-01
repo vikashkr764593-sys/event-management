@@ -29,7 +29,7 @@ class Instrument extends Model
      */
     protected $fillable = [
         'name',
-        'category',
+        'category_id',
         'price',
         'stock',
         'image',
@@ -44,4 +44,29 @@ class Instrument extends Model
         'price' => 'float',
         'stock' => 'integer',
     ];
+
+    /**
+     * Get the URL for the instrument's image.
+     */
+    public function getImageUrlAttribute(): string
+    {
+        if ($this->image) {
+            if (str_starts_with($this->image, 'http')) {
+                return $this->image;
+            }
+            return asset('storage/' . $this->image);
+        }
+
+        // Return a default placeholder if no image exists
+        $name = urlencode($this->name ?: 'Instrument');
+        return "https://ui-avatars.com/api/?name={$name}&background=3B82F6&color=ffffff&size=128&font-size=0.33&bold=true";
+    }
+
+    /**
+     * Get the category that owns the instrument.
+     */
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
 }

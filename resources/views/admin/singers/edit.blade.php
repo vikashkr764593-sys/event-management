@@ -95,6 +95,16 @@
                             @enderror
                         </div>
 
+                        <!-- Rating -->
+                        <div>
+                            <label for="rating" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Rating (0.0 to 5.0)</label>
+                            <input type="number" step="0.1" min="0" max="5" name="rating" id="rating" value="{{ old('rating', $singer->rating) }}" 
+                                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500">
+                            @error('rating')
+                                <p class="mt-1 text-sm text-error-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <!-- Profile Image -->
                         <div class="col-span-1 md:col-span-2">
                             <label for="profile_image" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Upload New Profile Image</label>

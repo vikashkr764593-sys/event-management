@@ -33,6 +33,7 @@ class Singer extends Model
         'genre',
         'experience_years',
         'availability_status',
+        'rating',
         'biography',
         'profile_image',
     ];
@@ -44,6 +45,7 @@ class Singer extends Model
      */
     protected $casts = [
         'experience_years' => 'integer',
+        'rating'           => 'float',
     ];
 
     /**

@@ -55,6 +55,11 @@ class MenuHelper
                         'name' => 'Instruments',
                         'path' => '/admin/instruments',
                     ],
+                    [
+                        'icon' => 'forms',
+                        'name' => 'Categories',
+                        'path' => '/admin/categories',
+                    ],
                 ]
             ],
             [
