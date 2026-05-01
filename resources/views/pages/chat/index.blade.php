@@ -34,7 +34,7 @@
         </div>
         @empty
         <div class="text-center py-5">
-            <p class="text-gray-500">No chat messages found.</p>
+            <p class="text-gray-500 dark:text-gray-400">No chat messages found.</p>
         </div>
         @endforelse
     </div>

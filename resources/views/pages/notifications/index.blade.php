@@ -35,7 +35,7 @@
         </div>
         @empty
         <div class="text-center py-5">
-            <p class="text-gray-500">No system notifications found.</p>
+            <p class="text-gray-500 dark:text-gray-400">No system notifications found.</p>
         </div>
         @endforelse
     </div>

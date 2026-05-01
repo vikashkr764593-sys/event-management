@@ -9,7 +9,7 @@
 
 <div class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark p-6.5">
     <h3 class="text-title-sm font-medium text-black dark:text-white mb-4">Export Capabilities</h3>
-    <p class="mb-5 text-gray-500">
+    <p class="mb-5 text-gray-500 dark:text-gray-400">
         The reporting data is aggregated and visualized on the main dashboard. 
         Advanced PDF and CSV exports will be available in the upcoming release.
     </p>

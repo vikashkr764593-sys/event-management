@@ -5,7 +5,7 @@
 <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
         <h2 class="text-2xl font-bold text-black dark:text-white">Dashboard Overview</h2>
-        <p class="text-sm font-medium text-gray-500 mt-1">Here is a summary of your event and instrument operations.</p>
+        <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">Here is a summary of your event and instrument operations.</p>
     </div>
     <div class="flex items-center gap-3">
         <a href="{{ route('admin.reports') }}" class="inline-flex items-center justify-center rounded-lg border border-stroke bg-white px-5 py-2.5 text-center font-medium text-black hover:bg-gray-50 transition-colors shadow-sm dark:border-strokedark dark:bg-meta-4 dark:text-white dark:hover:bg-opacity-90">
@@ -30,7 +30,7 @@
         <div class="mt-6 flex items-end justify-between relative z-10">
             <div>
                 <h4 class="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">{{ $totalBookings }}</h4>
-                <span class="text-xs uppercase tracking-wider font-bold text-gray-500 mt-1 block">Total Bookings</span>
+                <span class="text-xs uppercase tracking-tight font-bold text-gray-500 dark:text-gray-400 mt-1 block">Total Bookings</span>
             </div>
         </div>
     </div>
@@ -46,7 +46,7 @@
         <div class="mt-6 flex items-end justify-between relative z-10">
             <div>
                 <h4 class="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">{{ $pendingBookings }}</h4>
-                <span class="text-xs uppercase tracking-wider font-bold text-gray-500 mt-1 block">Pending Bookings</span>
+                <span class="text-xs uppercase tracking-tight font-bold text-gray-500 dark:text-gray-400 mt-1 block">Pending Bookings</span>
             </div>
         </div>
     </div>
@@ -62,7 +62,7 @@
         <div class="mt-6 flex items-end justify-between relative z-10">
             <div>
                 <h4 class="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">₹{{ number_format($totalRevenue, 2) }}</h4>
-                <span class="text-xs uppercase tracking-wider font-bold text-gray-500 mt-1 block">Total Revenue</span>
+                <span class="text-xs uppercase tracking-tight font-bold text-gray-500 dark:text-gray-400 mt-1 block">Total Revenue</span>
             </div>
         </div>
     </div>
@@ -78,7 +78,7 @@
         <div class="mt-6 flex items-end justify-between relative z-10">
             <div>
                 <h4 class="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">{{ $outOfStock }}</h4>
-                <span class="text-xs uppercase tracking-wider font-bold text-gray-500 mt-1 block">Out of Stock</span>
+                <span class="text-xs uppercase tracking-tight font-bold text-gray-500 dark:text-gray-400 mt-1 block">Out of Stock</span>
             </div>
         </div>
     </div>
@@ -92,7 +92,7 @@
                 <h4 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white">
                     Booking Trends
                 </h4>
-                <p class="text-sm font-medium text-gray-500 mt-1">Overview of booking status distribution.</p>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">Overview of booking status distribution.</p>
             </div>
         </div>
         <div id="bookingChart" class="-ml-5"></div>
@@ -105,7 +105,7 @@
                 <h4 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white">
                     Inventory Usage
                 </h4>
-                <p class="text-sm font-medium text-gray-500 mt-1">Distribution by category.</p>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">Distribution by category.</p>
             </div>
         </div>
         <div id="inventoryChart" class="mx-auto flex justify-center mt-6"></div>
