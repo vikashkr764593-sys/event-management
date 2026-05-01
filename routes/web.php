@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\AdminInstrumentController;
 use App\Http\Controllers\Admin\AdminBookingController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminCategoryController;
+use App\Http\Controllers\Admin\AdminNotificationController;
+use App\Http\Controllers\Admin\AdminChatController;
 
 // Redirect root to admin dashboard (or login if unauthenticated)
 Route::get('/', function () {
@@ -28,9 +30,19 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Chat & Notifications Views
-    Route::get('/chat', [DashboardController::class, 'chat'])->name('chat');
-    Route::get('/notifications', [DashboardController::class, 'notifications'])->name('notifications');
+    // Chat & Messaging
+    Route::get('/chat', [AdminChatController::class, 'index'])->name('chat.index');
+    Route::get('/chat/{id}', [AdminChatController::class, 'show'])->name('chat.show');
+    Route::post('/chat/{id}', [AdminChatController::class, 'store'])->name('chat.store');
+    Route::post('/chat/start', [AdminChatController::class, 'startConversation'])->name('chat.start');
+    
+    // Notifications Management
+    Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications');
+    Route::post('/notifications/{id}/read', [AdminNotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/{id}/unread', [AdminNotificationController::class, 'markAsUnread'])->name('notifications.unread');
+    Route::post('/notifications/mark-all-read', [AdminNotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::delete('/notifications/cleanup', [AdminNotificationController::class, 'cleanup'])->name('notifications.cleanup');
+    Route::delete('/notifications/{id}', [AdminNotificationController::class, 'destroy'])->name('notifications.destroy');
     Route::get('/reports', [DashboardController::class, 'reports'])->name('reports');
 
     // Profile & Account Routes

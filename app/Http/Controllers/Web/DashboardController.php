@@ -54,24 +54,9 @@ class DashboardController extends Controller
         ));
     }
 
-    /**
-     * View the Chat screen
-     */
-    public function chat()
-    {
-        $chats = Chat::with('sender', 'booking')->orderBy('created_at', 'desc')->paginate(50);
-        return view('pages.chat.index', compact('chats'));
-    }
 
-    /**
-     * View the Notifications screen
-     */
-    public function notifications()
-    {
-        // System wide notifications
-        $notifications = Notification::with('user')->orderBy('created_at', 'desc')->paginate(50);
-        return view('pages.notifications.index', compact('notifications'));
-    }
+
+
 
     /**
      * View the Reports screen
