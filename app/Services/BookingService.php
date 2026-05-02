@@ -3,6 +3,9 @@
 namespace App\Services;
 
 use App\Repositories\Contracts\BookingRepositoryInterface;
+use App\Models\User;
+use App\Notifications\NewBookingNotification;
+use Illuminate\Support\Facades\Notification;
 
 class BookingService
 {
@@ -13,9 +16,14 @@ class BookingService
     }
     public function createBooking(array $data, $userId)
     {
-        // Add external service calls here (e.g. Email/SMS notifications to Singer)
         $data['user_id'] = $userId;
-        return $this->bookingRepo->create($data);
+        $booking = $this->bookingRepo->create($data);
+
+        // Notify Admins
+        $admins = User::where('role', 'admin')->get();
+        Notification::send($admins, new NewBookingNotification($booking));
+
+        return $booking;
     }
     public function getUserBookings($userId)
     {

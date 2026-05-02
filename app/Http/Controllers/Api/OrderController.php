@@ -110,6 +110,14 @@ class OrderController extends Controller
                 'data'   => new OrderResource($order)
             ]);
         } catch (Exception $e) { 
+            // Notify Admins of failure if order exists
+            if ($request->has('order_id')) {
+                $order = \App\Models\Order::find($request->order_id);
+                if ($order) {
+                    $admins = \App\Models\User::where('role', 'admin')->get();
+                    \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\PaymentFailedNotification($order, $e->getMessage()));
+                }
+            }
             return response()->json(['status' => false, 'message' => $e->getMessage()], 400); 
         }
     }

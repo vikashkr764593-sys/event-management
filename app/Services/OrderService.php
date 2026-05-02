@@ -5,7 +5,12 @@ namespace App\Services;
 use App\Repositories\Contracts\OrderRepositoryInterface;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\User;
+use App\Notifications\NewOrderNotification;
+use App\Notifications\OrderConfirmedNotification;
+use App\Notifications\PaymentFailedNotification;
 use Exception;
+use Illuminate\Support\Facades\Notification;
 use Razorpay\Api\Api as RazorpayApi;
 
 class OrderService
@@ -90,7 +95,13 @@ class OrderService
         // Clear the cart
         $cart->items()->delete();
 
-        return $this->orderRepo->find($order->id);
+        $order = $this->orderRepo->find($order->id);
+
+        // Notify Admins
+        $admins = User::where('role', 'admin')->get();
+        Notification::send($admins, new NewOrderNotification($order));
+
+        return $order;
     }
 
     /**
@@ -113,7 +124,12 @@ class OrderService
             'razorpay_payment_id' => $razorpayPaymentId
         ]);
 
-        return $this->orderRepo->find($orderId);
+        $order = $this->orderRepo->find($orderId);
+
+        // Notify User
+        $order->user->notify(new OrderConfirmedNotification($order));
+
+        return $order;
     }
 
     /**

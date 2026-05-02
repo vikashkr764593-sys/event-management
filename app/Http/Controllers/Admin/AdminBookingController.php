@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\User;
 use App\Models\Singer;
+use App\Notifications\BookingStatusNotification;
 use Illuminate\Http\Request;
 
 class AdminBookingController extends Controller {
@@ -82,7 +83,13 @@ class AdminBookingController extends Controller {
             return back()->withInput()->with('error', 'Booking Conflict: This singer is already booked for the selected date and time.');
         }
 
+        $oldStatus = $booking->status;
         $booking->update($validated);
+
+        // Notify user if status changed to approved or rejected
+        if ($oldStatus !== $booking->status && in_array($booking->status, ['approved', 'rejected'])) {
+            $booking->user->notify(new BookingStatusNotification($booking));
+        }
 
         return redirect()->route('admin.bookings.index')->with('success', 'Booking updated successfully.');
     }

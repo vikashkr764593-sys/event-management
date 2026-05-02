@@ -4,29 +4,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Http\Resources\NotificationResource;
-use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 use Exception;
 
 class NotificationController extends Controller
 {
-    /**
-     * Fetch all notifications for the authenticated user.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function index(Request $request): JsonResponse
     {
         try {
-            $notifications = Notification::where('user_id', $request->user()->id)
-                                         ->orderBy('id', 'desc')
-                                         ->get();
+            $notifications = $request->user()->notifications;
 
             return response()->json([
                 'status' => true, 
-                'data'   => NotificationResource::collection($notifications)
+                'data'   => $notifications
             ]);
         } catch (Exception $e) { 
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500); 
@@ -36,18 +26,18 @@ class NotificationController extends Controller
     /**
      * Mark a specific notification as read.
      *
-     * @param int $id
+     * @param string $id
      * @return JsonResponse
      */
-    public function markAsRead($id): JsonResponse
+    public function markAsRead(Request $request, $id): JsonResponse
     {
         try {
-            $notification = Notification::findOrFail($id);
-            $notification->update(['is_read' => true]);
+            $notification = $request->user()->notifications()->findOrFail($id);
+            $notification->markAsRead();
 
             return response()->json([
                 'status' => true, 
-                'data'   => new NotificationResource($notification)
+                'message' => 'Notification marked as read'
             ]);
         } catch (Exception $e) { 
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500); 
