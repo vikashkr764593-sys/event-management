@@ -56,6 +56,7 @@ class OrderConfirmedNotification extends Notification implements ShouldQueue
     {
         return [
             'order_id' => $this->order->id,
+            'title' => 'Payment Confirmed',
             'message' => 'Your payment for Order #' . $this->order->id . ' has been confirmed.',
             'type' => 'order_confirmation'
         ];

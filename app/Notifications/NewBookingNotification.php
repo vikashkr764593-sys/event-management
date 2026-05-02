@@ -58,6 +58,7 @@ class NewBookingNotification extends Notification implements ShouldQueue
     {
         return [
             'booking_id' => $this->booking->id,
+            'title' => 'New Booking',
             'message' => 'New booking received from ' . $this->booking->user->name,
             'type' => 'new_booking'
         ];

@@ -57,6 +57,7 @@ class NewOrderNotification extends Notification implements ShouldQueue
     {
         return [
             'order_id' => $this->order->id,
+            'title' => 'New Order',
             'message' => 'New order received from ' . $this->order->user->name . ' for ₹' . number_format($this->order->total_amount, 2),
             'type' => 'new_order'
         ];

@@ -61,6 +61,7 @@ class PaymentFailedNotification extends Notification implements ShouldQueue
     {
         return [
             'order_id' => $this->order->id,
+            'title' => 'Payment Failed',
             'message' => 'Payment failed for Order #' . $this->order->id . ' (Reason: ' . $this->reason . ')',
             'type' => 'payment_failure'
         ];

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -15,9 +14,7 @@ class AdminNotificationController extends Controller
      */
     public function index()
     {
-        $notifications = Notification::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $notifications = Auth::user()->notifications()->paginate(20);
 
         return view('admin.notifications.index', compact('notifications'));
     }
@@ -27,8 +24,8 @@ class AdminNotificationController extends Controller
      */
     public function markAsRead($id)
     {
-        $notification = Notification::where('user_id', Auth::id())->findOrFail($id);
-        $notification->update(['is_read' => true]);
+        $notification = Auth::user()->notifications()->findOrFail($id);
+        $notification->markAsRead();
 
         return back()->with('success', 'Notification marked as read.');
     }
@@ -38,8 +35,8 @@ class AdminNotificationController extends Controller
      */
     public function markAsUnread($id)
     {
-        $notification = Notification::where('user_id', Auth::id())->findOrFail($id);
-        $notification->update(['is_read' => false]);
+        $notification = Auth::user()->notifications()->findOrFail($id);
+        $notification->markAsUnread();
 
         return back()->with('success', 'Notification marked as unread.');
     }
@@ -49,9 +46,7 @@ class AdminNotificationController extends Controller
      */
     public function markAllAsRead()
     {
-        Notification::where('user_id', Auth::id())
-            ->where('is_read', false)
-            ->update(['is_read' => true]);
+        Auth::user()->unreadNotifications->markAsRead();
 
         return back()->with('success', 'All notifications marked as read.');
     }
@@ -61,11 +56,11 @@ class AdminNotificationController extends Controller
      */
     public function cleanup()
     {
-        $count = Notification::where('user_id', Auth::id())
+        $count = Auth::user()->notifications()
             ->where('created_at', '<', Carbon::now()->subDays(30))
             ->delete();
 
-        return back()->with('success', "Cleaned up $count old notifications.");
+        return back()->with('success', "Cleaned up old notifications.");
     }
 
     /**
@@ -73,7 +68,7 @@ class AdminNotificationController extends Controller
      */
     public function destroy($id)
     {
-        $notification = Notification::where('user_id', Auth::id())->findOrFail($id);
+        $notification = Auth::user()->notifications()->findOrFail($id);
         $notification->delete();
 
         return back()->with('success', 'Notification deleted.');

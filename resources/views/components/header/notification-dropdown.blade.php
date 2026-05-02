@@ -1,7 +1,7 @@
 {{-- Notification Dropdown Component --}}
 @php
-    $notifications = \App\Models\Notification::where('user_id', Auth::id())->latest()->take(5)->get();
-    $unreadCount = \App\Models\Notification::where('user_id', Auth::id())->where('is_read', false)->count();
+    $notifications = Auth::user()->notifications()->latest()->take(5)->get();
+    $unreadCount = Auth::user()->unreadNotifications()->count();
 @endphp
 <div class="relative" x-data="{
     dropdownOpen: false,
@@ -96,18 +96,18 @@
         <ul class="flex flex-col h-auto overflow-y-auto custom-scrollbar">
             @forelse ($notifications as $notification)
                 <li>
-                    <a class="flex gap-3 rounded-lg border-b border-gray-100 px-3 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5 {{ !$notification->is_read ? 'bg-indigo-50/60 dark:bg-indigo-500/5' : '' }}" href="{{ route('admin.notifications') }}" @click="closeDropdown()">
+                    <a class="flex gap-3 rounded-lg border-b border-gray-100 px-3 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5 {{ $notification->unread() ? 'bg-indigo-50/60 dark:bg-indigo-500/5' : '' }}" href="{{ route('admin.notifications') }}" @click="closeDropdown()">
                         <span class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path fill-rule="evenodd" clip-rule="evenodd" d="M11.0991 7.52507C11.0991 8.02213 11.5021 8.42507 11.9991 8.42507H12.0001C12.4972 8.42507 12.9001 8.02213 12.9001 7.52507C12.9001 7.02802 12.4972 6.62507 12.0001 6.62507H11.9991C11.5021 6.62507 11.0991 7.02802 11.0991 7.52507ZM12.0001 17.3714C11.5859 17.3714 11.2501 17.0356 11.2501 16.6214V10.9449C11.2501 10.5307 11.5859 10.1949 12.0001 10.1949C12.4143 10.1949 12.7501 10.5307 12.7501 10.9449V16.6214C12.7501 17.0356 12.4143 17.3714 12.0001 17.3714ZM12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z" fill="currentColor" />
                             </svg>
                         </span>
                         <span class="block flex-1 min-w-0">
-                            <span class="mb-1 block text-theme-sm font-medium text-gray-800 dark:text-white/90 truncate">{{ $notification->title }}</span>
-                            <span class="block text-theme-xs text-gray-500 dark:text-gray-400 line-clamp-2">{{ $notification->message }}</span>
+                            <span class="mb-1 block text-theme-sm font-medium text-gray-800 dark:text-white/90 truncate">{{ $notification->data['title'] ?? 'Notification' }}</span>
+                            <span class="block text-theme-xs text-gray-500 dark:text-gray-400 line-clamp-2">{{ $notification->data['message'] ?? '' }}</span>
                             <span class="mt-1.5 flex items-center gap-1.5 text-gray-400 text-[11px] dark:text-gray-500">
                                 {{ $notification->created_at->diffForHumans() }}
-                                @if(!$notification->is_read)
+                                @if($notification->unread())
                                     <span class="ml-auto h-2 w-2 rounded-full bg-orange-400 flex-shrink-0"></span>
                                 @endif
                             </span>

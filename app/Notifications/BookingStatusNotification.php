@@ -66,6 +66,7 @@ class BookingStatusNotification extends Notification implements ShouldQueue
         return [
             'booking_id' => $this->booking->id,
             'status' => $this->booking->status,
+            'title' => 'Booking Update',
             'message' => 'Your booking status has been updated to ' . $this->booking->status,
             'type' => 'booking_status_update'
         ];
