@@ -26,28 +26,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
-    // Admin Users
-    Route::apiResource('users', UserController::class);
+    // User Territory: Personal Management
 
-    // Singers
-    Route::apiResource('singers', SingerController::class);
-    // Singer Availability Routes
+    // Singers (Read-only for General Users, Management for Performers)
+    Route::apiResource('singers', SingerController::class)->only(['index', 'show']);
     Route::get('/singers/{id}/availability', [SingerController::class, 'getAvailability']);
-    Route::post('/singers/{id}/availability', [SingerController::class, 'storeAvailability']);
-    Route::put('/singers/{id}/availability', [SingerController::class, 'updateAvailability']);
+    // Route::post('/singers/{id}/availability', [SingerController::class, 'storeAvailability']);
+    // Route::put('/singers/{id}/availability', [SingerController::class, 'updateAvailability']);
 
     // Instruments
-    Route::apiResource('instruments', InstrumentController::class);
+    Route::apiResource('instruments', InstrumentController::class)->only(['index', 'show']);
 
     // Bookings
     Route::get('/bookings/my', [BookingController::class, 'myBookings']);
-    Route::get('/bookings', [BookingController::class, 'index']); // Admin
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
     Route::put('/bookings/{id}', [BookingController::class, 'update']);
     Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
-    Route::post('/bookings/{id}/approve', [BookingController::class, 'approve']);
-    Route::post('/bookings/{id}/reject', [BookingController::class, 'reject']);
 
     // Cart
     Route::get('/cart', [CartController::class, 'index']);
@@ -57,18 +52,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Orders
     Route::get('/orders/my', [OrderController::class, 'index']);
-    Route::get('/orders', [OrderController::class, 'allOrders']); // Admin
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);
     Route::post('/orders/verify-payment', [OrderController::class, 'verifyPayment']);
-    Route::post('/orders/{id}/approve', [OrderController::class, 'approve']);
-    Route::post('/orders/{id}/reject', [OrderController::class, 'reject']);
-    Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
-
-    // Approvals
-    Route::get('/approvals', [ApprovalController::class, 'index']);
-    Route::post('/approvals/{id}/approve', [ApprovalController::class, 'approve']);
-    Route::post('/approvals/{id}/reject', [ApprovalController::class, 'reject']);
 
     // Chat
     Route::post('/chat/send', [ChatController::class, 'send']);
@@ -78,12 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 
-    // Reports
-    Route::get('/reports/bookings', [ReportController::class, 'bookings']);
-    Route::get('/reports/inventory', [ReportController::class, 'inventory']);
-    Route::get('/reports/orders', [ReportController::class, 'orders']);
-
-    // File Upload
+    // File Upload (Personal)
     Route::post('/upload', [UploadController::class, 'upload']);
     Route::delete('/upload', [UploadController::class, 'destroy']);
 });

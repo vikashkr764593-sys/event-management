@@ -24,9 +24,8 @@ Route::get('/admin/login', [AdminAuthController::class, 'showLoginForm'])->name(
 Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
 Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
-// Admin Panel Routes (Protected by Auth)
-// Assuming we will create a middleware 'admin' later, using standard 'auth' for now
-Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+// Admin Panel Routes (Protected by Auth and EnsureAdmin)
+Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

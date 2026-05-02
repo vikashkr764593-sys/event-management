@@ -5,9 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSingerRequest;
 use App\Http\Requests\UpdateSingerRequest;
+use App\Http\Requests\StoreSingerAvailabilityRequest;
+use App\Http\Requests\UpdateSingerAvailabilityRequest;
 use App\Http\Resources\SingerResource;
+use App\Http\Resources\SingerAvailabilityResource;
+use App\Models\Singer;
+use App\Models\SingerAvailability;
 use App\Repositories\Contracts\SingerRepositoryInterface;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Exception;
 
@@ -18,32 +22,23 @@ class SingerController extends Controller
     public function __construct(SingerRepositoryInterface $singerRepo)
     {
         $this->singerRepo = $singerRepo;
+        // Middleware removed to align with simplified Role split (Admin=Web)
     }
 
+    /**
+     * Display a listing of singers.
+     */
     public function index(): JsonResponse
     {
-        // For actual implementation, the repository should load the 'user' relationship
-        // e.g. return $this->singerRepo->with('user')->get(); 
-        // We'll just return what's available for now
         return response()->json([
             'status' => true,
             'data'   => SingerResource::collection($this->singerRepo->all())
         ]);
     }
 
-    public function store(StoreSingerRequest $request): JsonResponse
-    {
-        try {
-            $singer = $this->singerRepo->create($request->validated());
-            return response()->json([
-                'status' => true,
-                'data'   => new SingerResource($singer)
-            ], 201);
-        } catch (Exception $e) {
-            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
-        }
-    }
-
+    /**
+     * Display the specified singer.
+     */
     public function show($id): JsonResponse
     {
         try {
@@ -57,48 +52,22 @@ class SingerController extends Controller
         }
     }
 
-    public function update(UpdateSingerRequest $request, $id): JsonResponse
-    {
-        try {
-            $singer = $this->singerRepo->update($id, $request->validated());
-            return response()->json([
-                'status' => true,
-                'data'   => new SingerResource($singer)
-            ]);
-        } catch (Exception $e) {
-            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
-        }
-    }
-
-    public function destroy($id): JsonResponse
-    {
-        try {
-            $this->singerRepo->delete($id);
-            return response()->json(['status' => true, 'message' => 'Singer deleted successfully']);
-        } catch (Exception $e) {
-            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
-        }
-    }
-
     /**
      * Get availability dates for a specific singer.
-     *
-     * @param int $id
-     * @return JsonResponse
      */
     public function getAvailability($id): JsonResponse
     {
         try {
-            // Verify singer exists
-            $singer = $this->singerRepo->find($id);
-            
-            $availabilities = \App\Models\SingerAvailability::where('singer_id', $id)
+            // Verify singer exists via repo
+            $this->singerRepo->find($id);
+
+            $availabilities = SingerAvailability::where('singer_id', $id)
                 ->orderBy('date', 'asc')
                 ->get();
 
             return response()->json([
                 'status' => true,
-                'data'   => \App\Http\Resources\SingerAvailabilityResource::collection($availabilities)
+                'data'   => SingerAvailabilityResource::collection($availabilities)
             ]);
         } catch (Exception $e) {
             return response()->json(['status' => false, 'message' => 'Singer not found.'], 404);
@@ -106,55 +75,62 @@ class SingerController extends Controller
     }
 
     /**
-     * Add a new availability record for a singer.
-     *
-     * @param \App\Http\Requests\StoreSingerAvailabilityRequest $request
-     * @param int $id
-     * @return JsonResponse
+     * Manage availability records. 
+     * Note: Creating/Updating availability is currently permitted via API 
+     * for singers to manage their own schedules.
      */
-    public function storeAvailability(\App\Http\Requests\StoreSingerAvailabilityRequest $request, $id): JsonResponse
+    public function storeAvailability(StoreSingerAvailabilityRequest $request, $id): JsonResponse
     {
         try {
-            // Verify singer exists
-            $this->singerRepo->find($id);
+            $singer = $this->singerRepo->find($id);
+
+            // Authorization: Only the singer themselves or an admin can manage availability
+            if (request()->user()->role !== 'admin' && request()->user()->id !== $singer->user_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Unauthorized: You can only manage your own availability.'
+                ], 403);
+            }
 
             $data = $request->validated();
             $data['singer_id'] = $id;
 
-            $availability = \App\Models\SingerAvailability::create($data);
+            $availability = SingerAvailability::create($data);
 
             return response()->json([
                 'status' => true,
-                'data'   => new \App\Http\Resources\SingerAvailabilityResource($availability)
+                'data'   => new SingerAvailabilityResource($availability)
             ], 201);
         } catch (Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
-    /**
-     * Update an existing availability record.
-     * Note: the $id parameter here represents the availability record ID, not the singer ID, 
-     * based on standard REST practices for an update endpoint.
-     *
-     * @param \App\Http\Requests\UpdateSingerAvailabilityRequest $request
-     * @param int $id
-     * @return JsonResponse
-     */
-    public function updateAvailability(\App\Http\Requests\UpdateSingerAvailabilityRequest $request, $id): JsonResponse
+    public function updateAvailability(UpdateSingerAvailabilityRequest $request, $id): JsonResponse
     {
         try {
-            $availability = \App\Models\SingerAvailability::findOrFail($id);
+            $availability = SingerAvailability::with('singer')->findOrFail($id);
+
+            // Authorization Check
+            if (request()->user()->role !== 'admin' && request()->user()->id !== $availability->singer->user_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Unauthorized: You can only manage your own availability.'
+                ], 403);
+            }
+
             $availability->update($request->validated());
 
             return response()->json([
                 'status' => true,
-                'data'   => new \App\Http\Resources\SingerAvailabilityResource($availability)
+                'data'   => new SingerAvailabilityResource($availability)
             ]);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json(['status' => false, 'message' => 'Availability record not found.'], 404);
         } catch (Exception $e) {
-            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+            $code = $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500;
+            return response()->json(['status' => false, 'message' => $e->getMessage()], $code);
         }
     }
+
+    // Administrative methods (store, update, destroy) are removed from API 
+    // to enforce the Web-only Admin Management architecture.
 }

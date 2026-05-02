@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo('/admin/login');
         $middleware->trustProxies(at: '*');
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'is_admin' => \App\Http\Middleware\EnsureAdmin::class,
+            'singer.permissions' => \App\Http\Middleware\CheckSingerPermissions::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -1,7 +1,7 @@
 <?php
-
+ 
 namespace App\Http\Controllers\Api;
-
+ 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreBookingRequest;
 use App\Http\Requests\UpdateBookingRequest;
@@ -11,12 +11,12 @@ use App\Repositories\Contracts\BookingRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Exception;
-
+ 
 class BookingController extends Controller
 {
     protected $bookingService;
     protected $bookingRepo;
-
+ 
     public function __construct(BookingService $bookingService, BookingRepositoryInterface $bookingRepo)
     {
         $this->bookingService = $bookingService;
@@ -72,7 +72,7 @@ class BookingController extends Controller
             return response()->json(['status' => false, 'message' => 'Booking not found'], 404); 
         }
     }
-
+ 
     public function update(UpdateBookingRequest $request, $id): JsonResponse
     {
         try {
@@ -85,7 +85,7 @@ class BookingController extends Controller
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500); 
         }
     }
-
+ 
     public function destroy($id): JsonResponse
     {
         try {
@@ -93,34 +93,6 @@ class BookingController extends Controller
             return response()->json([
                 'status'  => true, 
                 'message' => 'Booking cancelled'
-            ]);
-        } catch (Exception $e) { 
-            return response()->json(['status' => false, 'message' => $e->getMessage()], 500); 
-        }
-    }
-
-    public function approve($id): JsonResponse
-    {
-        try {
-            $booking = $this->bookingRepo->update($id, ['status' => 'Approved']);
-            return response()->json([
-                'status'  => true, 
-                'message' => 'Booking approved', 
-                'data'    => new BookingResource($booking)
-            ]);
-        } catch (Exception $e) { 
-            return response()->json(['status' => false, 'message' => $e->getMessage()], 500); 
-        }
-    }
-
-    public function reject($id): JsonResponse
-    {
-        try {
-            $booking = $this->bookingRepo->update($id, ['status' => 'Rejected']);
-            return response()->json([
-                'status'  => true, 
-                'message' => 'Booking rejected', 
-                'data'    => new BookingResource($booking)
             ]);
         } catch (Exception $e) { 
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500); 
