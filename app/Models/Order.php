@@ -14,8 +14,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property float $total_amount
  * @property string $status
  * @property string $payment_status
+ * @property string $payment_method
+ * @property array|null $shipping_address
  * @property string|null $razorpay_order_id
  * @property string|null $razorpay_payment_id
+ * @property string|null $razorpay_signature
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  */
@@ -33,8 +36,11 @@ class Order extends Model
         'total_amount',
         'status',
         'payment_status',
+        'payment_method',
+        'shipping_address',
         'razorpay_order_id',
         'razorpay_payment_id',
+        'razorpay_signature',
     ];
 
     /**
@@ -43,7 +49,8 @@ class Order extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'total_amount' => 'float',
+        'total_amount'     => 'float',
+        'shipping_address' => 'array',
     ];
 
     /**

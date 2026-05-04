@@ -1,7 +1,7 @@
 <?php
- 
+
 namespace App\Http\Controllers\Api;
- 
+
 use App\Http\Controllers\Controller;
 use App\Services\OrderService;
 use App\Http\Resources\OrderResource;
@@ -10,25 +10,12 @@ use App\Repositories\Contracts\OrderRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Exception;
- 
+
 class OrderController extends Controller
 {
-    /**
-     * @var OrderService
-     */
     protected $orderService;
- 
-    /**
-     * @var OrderRepositoryInterface
-     */
     protected $orderRepo;
- 
-    /**
-     * OrderController constructor.
-     *
-     * @param OrderService $orderService
-     * @param OrderRepositoryInterface $orderRepo
-     */
+
     public function __construct(OrderService $orderService, OrderRepositoryInterface $orderRepo)
     {
         $this->orderService = $orderService;
@@ -37,9 +24,6 @@ class OrderController extends Controller
     
     /**
      * Fetch orders for the currently authenticated user.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     { 
@@ -56,27 +40,49 @@ class OrderController extends Controller
 
     /**
      * Create a new order from the user's cart (Checkout).
+     * Supports Razorpay and COD.
      */
     public function store(Request $request): JsonResponse
     {
         try {
-            $order = $this->orderService->checkout($request->user()->id);
+            $request->validate([
+                'payment_method' => 'required|in:razorpay,cod',
+                'address'        => 'required|array',
+                'address.street' => 'required|string|max:255',
+                'address.city'   => 'required|string|max:100',
+                'address.state'  => 'required|string|max:100',
+                'address.pincode'=> 'required|string|size:6',
+                'address.phone'  => 'required|string|min:10',
+                'verification_code' => 'required_if:payment_method,cod' // Mocking COD verification
+            ]);
+
+            // Add simple logic for COD verification if needed
+            if ($request->payment_method === 'cod' && $request->verification_code !== '1234') {
+                return response()->json(['status' => false, 'message' => 'Invalid COD verification code.'], 400);
+            }
+
+            $order = $this->orderService->checkout($request->user()->id, $request->all());
+            
             return response()->json([
                 'status' => true, 
-                'data'   => new OrderResource($order)
+                'message' => 'Order initialized successfully.',
+                'data'   => new OrderResource($order->load('items.instrument'))
             ], 201);
         } catch (Exception $e) { 
             return response()->json(['status' => false, 'message' => $e->getMessage()], 400); 
         }
     }
 
+    /**
+     * Fetch details of a specific order.
+     */
     public function show($id): JsonResponse
     {
         try {
             $order = $this->orderRepo->find($id);
             return response()->json([
                 'status' => true, 
-                'data'   => new OrderResource($order)
+                'data'   => new OrderResource($order->load('items.instrument'))
             ]);
         } catch (Exception $e) { 
             return response()->json(['status' => false, 'message' => 'Order not found.'], 404); 
@@ -85,9 +91,6 @@ class OrderController extends Controller
  
     /**
      * Verify Razorpay Payment.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function verifyPayment(Request $request): JsonResponse
     {
@@ -106,8 +109,8 @@ class OrderController extends Controller
  
             return response()->json([
                 'status' => true, 
-                'message' => 'Payment verified successfully.',
-                'data'   => new OrderResource($order)
+                'message' => 'Payment verified and order confirmed successfully.',
+                'data'   => new OrderResource($order->load('items.instrument'))
             ]);
         } catch (Exception $e) { 
             // Notify Admins of failure if order exists
