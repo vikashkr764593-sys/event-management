@@ -90,6 +90,25 @@ class OrderController extends Controller
     }
  
     /**
+     * Retry payment for an existing order.
+     * Regenerates Razorpay Order ID.
+     */
+    public function retryPayment(Request $request, $id): JsonResponse
+    {
+        try {
+            $order = $this->orderService->regenerateRazorpayOrder($id, $request->user()->id);
+            
+            return response()->json([
+                'status' => true,
+                'message' => 'New payment session initialized.',
+                'data' => new OrderResource($order->load('items.instrument'))
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
      * Verify Razorpay Payment.
      */
     public function verifyPayment(Request $request): JsonResponse
