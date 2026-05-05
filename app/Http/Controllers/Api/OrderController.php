@@ -106,22 +106,30 @@ class OrderController extends Controller
                 $request->razorpay_payment_id, 
                 $request->razorpay_signature
             );
- 
+
             return response()->json([
                 'status' => true, 
                 'message' => 'Payment verified and order confirmed successfully.',
                 'data'   => new OrderResource($order->load('items.instrument'))
             ]);
         } catch (Exception $e) { 
+            $errorMessage = $e->getMessage();
+            
             // Notify Admins of failure if order exists
             if ($request->has('order_id')) {
                 $order = \App\Models\Order::find($request->order_id);
                 if ($order) {
                     $admins = \App\Models\User::where('role', 'admin')->get();
-                    \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\PaymentFailedNotification($order, $e->getMessage()));
+                    // Admin gets the full error for debugging
+                    \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\PaymentFailedNotification($order, $errorMessage));
                 }
             }
-            return response()->json(['status' => false, 'message' => $e->getMessage()], 400); 
+
+            // Mobile App gets a clean message
+            return response()->json([
+                'status' => false, 
+                'message' => 'Payment verification failed. Please contact support if the amount was deducted.'
+            ], 400); 
         }
     }
 }

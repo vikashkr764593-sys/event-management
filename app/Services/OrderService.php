@@ -31,8 +31,11 @@ class OrderService
         $this->cartService = $cartService;
         $this->addressValidationService = $addressValidationService;
         
-        if (config('services.razorpay.key') && config('services.razorpay.secret')) {
-            $this->razorpay = new RazorpayApi(config('services.razorpay.key'), config('services.razorpay.secret'));
+        $keyId = config('services.razorpay.key');
+        $keySecret = config('services.razorpay.secret');
+
+        if ($keyId && $keySecret) {
+            $this->razorpay = new RazorpayApi($keyId, $keySecret);
         }
     }
 
@@ -110,40 +113,69 @@ class OrderService
     public function verifyPayment(int $orderId, string $paymentId, string $signature): Order
     {
         $order = $this->orderRepo->find($orderId);
-        
-        if ($this->razorpay) {
-            $attributes = [
-                'razorpay_order_id'   => $order->razorpay_order_id,
-                'razorpay_payment_id' => $paymentId,
-                'razorpay_signature'  => $signature
-            ];
-            
+
+        if (!$order) {
+            throw new Exception("Order not found.");
+        }
+
+        if (!$this->razorpay) {
+            throw new Exception("Razorpay is not configured.");
+        }
+
+        // Verify signature (Security First)
+        $attributes = [
+            'razorpay_order_id'   => $order->razorpay_order_id,
+            'razorpay_payment_id' => $paymentId,
+            'razorpay_signature'  => $signature
+        ];
+
+        try {
             $this->razorpay->utility->verifyPaymentSignature($attributes);
+        } catch (\Exception $e) {
+            throw new Exception("Payment verification failed: Invalid signature.");
+        }
+
+        // Double check payment details from Razorpay API
+        $payment = $this->razorpay->payment->fetch($paymentId);
+        if ($payment->status !== 'captured') {
+            throw new Exception("Payment not captured. Current status: " . $payment->status);
+        }
+
+        if ($payment->amount != ($order->total_amount * 100)) {
+            throw new Exception("Payment amount mismatch detected.");
         }
 
         return DB::transaction(function () use ($orderId, $paymentId, $signature) {
             $order = $this->orderRepo->find($orderId);
-            
-            // Only deduct stock for Razorpay if it hasn't been paid already
+
+            // Deduct stock only if not already Paid
             if ($order->payment_status !== 'Paid') {
                 foreach ($order->items as $item) {
                     $instrument = Instrument::lockForUpdate()->find($item->instrument_id);
+
                     if ($instrument->stock < $item->quantity) {
-                        throw new Exception("Insufficient stock for {$instrument->name} during payment confirmation.");
+                        throw new Exception("Insufficient stock for {$instrument->name} during final processing.");
                     }
+
                     $instrument->decrement('stock', $item->quantity);
                 }
             }
 
             $this->orderRepo->update($orderId, [
-                'payment_status'      => 'Paid', 
+                'payment_status' => 'Paid',
                 'razorpay_payment_id' => $paymentId,
-                'razorpay_signature'  => $signature,
-                'status'              => 'approved'
+                'razorpay_signature' => $signature,
+                'status' => 'Processing'
             ]);
 
             $order = $this->orderRepo->find($orderId);
+
+            // Notify User (Email/Database)
             $order->user->notify(new OrderConfirmedNotification($order));
+
+            // Notify Admins (Database)
+            $admins = User::where('role', 'admin')->get();
+            Notification::send($admins, new OrderConfirmedNotification($order));
 
             return $order;
         });
