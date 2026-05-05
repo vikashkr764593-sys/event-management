@@ -32,6 +32,7 @@ class Instrument extends Model
         'category_id',
         'price',
         'stock',
+        'reserved_stock',
         'image',
     ];
 

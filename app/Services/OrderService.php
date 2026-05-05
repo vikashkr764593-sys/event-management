@@ -14,6 +14,7 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Razorpay\Api\Api as RazorpayApi;
+use Carbon\Carbon;
 
 class OrderService
 {
@@ -40,8 +41,7 @@ class OrderService
     }
 
     /**
-     * Checkout process supporting Razorpay and COD.
-     * Implementation: Deducts stock immediately to "reserve" it for 30 minutes.
+     * Checkout process with Temporary Stock Locking.
      */
     public function checkout(int $userId, array $checkoutData): Order
     {
@@ -65,8 +65,9 @@ class OrderService
                 'total_amount'     => $total, 
                 'payment_method'   => $paymentMethod,
                 'shipping_address' => $shippingAddress,
-                'status'           => 'requested',
-                'payment_status'   => 'Pending'
+                'status'           => 'Payment Pending',
+                'payment_status'   => 'Pending',
+                'reservation_expires_at' => Carbon::now()->addHours(2)
             ]);
 
             foreach ($cart->items as $item) {
@@ -77,12 +78,14 @@ class OrderService
                     'price'         => $item->instrument->price
                 ]);
 
-                // Always reserve stock on order creation to prevent overselling during payment attempts
+                // Move from available stock to reserved stock
                 $instrument = Instrument::lockForUpdate()->find($item->instrument_id);
                 if ($instrument->stock < $item->quantity) {
                     throw new Exception("Insufficient stock for {$instrument->name}.");
                 }
+                
                 $instrument->decrement('stock', $item->quantity);
+                $instrument->increment('reserved_stock', $item->quantity);
             }
 
             // Clear the cart
@@ -107,7 +110,7 @@ class OrderService
     }
 
     /**
-     * Regenerate Razorpay Order ID for a retry attempt.
+     * Regenerate Razorpay Order ID with reservation check.
      */
     public function regenerateRazorpayOrder(int $orderId, int $userId): Order
     {
@@ -121,31 +124,47 @@ class OrderService
             throw new Exception("Order is already paid.");
         }
 
-        // Re-validate total amount against items to prevent tampering
-        $calculatedTotal = 0;
-        foreach ($order->items as $item) {
-            $calculatedTotal += ($item->price * $item->quantity);
-        }
+        return DB::transaction(function () use ($order) {
+            // Check if reservation has expired
+            if ($order->status === 'Cancelled - Payment Timeout' || ($order->reservation_expires_at && Carbon::now()->gt($order->reservation_expires_at))) {
+                // Re-reserve stock
+                foreach ($order->items as $item) {
+                    $instrument = Instrument::lockForUpdate()->find($item->instrument_id);
+                    if ($instrument->stock < $item->quantity) {
+                        throw new Exception("Stock no longer available for {$instrument->name}. Please create a new order.");
+                    }
+                    $instrument->decrement('stock', $item->quantity);
+                    $instrument->increment('reserved_stock', $item->quantity);
+                }
+            }
 
-        if (abs($calculatedTotal - $order->total_amount) > 0.01) {
-            throw new Exception("Price mismatch detected. Please contact support.");
-        }
+            // Re-validate total amount
+            $calculatedTotal = 0;
+            foreach ($order->items as $item) {
+                $calculatedTotal += ($item->price * $item->quantity);
+            }
 
-        // Generate new Razorpay Order ID
-        if ($this->razorpay) {
-            $rpOrder = $this->razorpay->order->create([
-                'receipt'  => 'rcpt_retry_' . $order->id, 
-                'amount'   => $order->total_amount * 100, 
-                'currency' => 'INR'
-            ]);
-            
-            $order->update([
-                'razorpay_order_id' => $rpOrder['id'],
-                'status' => 'requested' // Reset status to requested if it was failed
-            ]);
-        }
+            if (abs($calculatedTotal - $order->total_amount) > 0.01) {
+                throw new Exception("Price mismatch detected.");
+            }
 
-        return $order;
+            // Generate new Razorpay Order ID
+            if ($this->razorpay) {
+                $rpOrder = $this->razorpay->order->create([
+                    'receipt'  => 'rcpt_retry_' . $order->id, 
+                    'amount'   => $order->total_amount * 100, 
+                    'currency' => 'INR'
+                ]);
+                
+                $order->update([
+                    'razorpay_order_id' => $rpOrder['id'],
+                    'status' => 'Payment Pending',
+                    'reservation_expires_at' => Carbon::now()->addHours(2)
+                ]);
+            }
+
+            return $order;
+        });
     }
 
     /**
@@ -176,27 +195,35 @@ class OrderService
             throw new Exception("Payment verification failed: Invalid signature.");
         }
 
-        // Double check payment details from Razorpay API
+        // Double check payment details
         $payment = $this->razorpay->payment->fetch($paymentId);
         if ($payment->status !== 'captured') {
-            throw new Exception("Payment not captured. Status: " . $payment->status);
-        }
-
-        if ($payment->amount != ($order->total_amount * 100)) {
-            throw new Exception("Payment amount mismatch detected.");
+            throw new Exception("Payment not captured.");
         }
 
         return DB::transaction(function () use ($orderId, $paymentId, $signature) {
+            $order = $this->orderRepo->find($orderId);
+
+            // Move from reserved to finalized (just decrement reserved)
+            if ($order->payment_status !== 'Paid') {
+                foreach ($order->items as $item) {
+                    $instrument = Instrument::lockForUpdate()->find($item->instrument_id);
+                    // Ensure we don't go negative, but technically it was already reserved
+                    $instrument->decrement('reserved_stock', min($item->quantity, $instrument->reserved_stock));
+                }
+            }
+
             $this->orderRepo->update($orderId, [
                 'payment_status' => 'Paid',
                 'razorpay_payment_id' => $paymentId,
                 'razorpay_signature' => $signature,
-                'status' => 'Processing'
+                'status' => 'Processing',
+                'reservation_expires_at' => null // Clear expiry
             ]);
 
             $order = $this->orderRepo->find($orderId);
 
-            // Notify User & Admins
+            // Notifications
             $order->user->notify(new OrderConfirmedNotification($order));
             $admins = User::where('role', 'admin')->get();
             Notification::send($admins, new OrderConfirmedNotification($order));

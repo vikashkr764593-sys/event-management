@@ -41,6 +41,8 @@ class Order extends Model
         'razorpay_order_id',
         'razorpay_payment_id',
         'razorpay_signature',
+        'reservation_expires_at',
+        'notified_expiring_at',
     ];
 
     /**
@@ -51,6 +53,8 @@ class Order extends Model
     protected $casts = [
         'total_amount'     => 'float',
         'shipping_address' => 'array',
+        'reservation_expires_at' => 'datetime',
+        'notified_expiring_at' => 'datetime',
     ];
 
     /**
