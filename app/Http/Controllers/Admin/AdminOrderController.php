@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -9,20 +10,24 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class AdminOrderController extends Controller {
-    
-    public function index() {
+class AdminOrderController extends Controller
+{
+
+    public function index()
+    {
         $orders = Order::with(['user'])->latest()->get();
         return view('admin.orders.index', compact('orders'));
     }
 
-    public function create() { 
-        $users = User::all();
+    public function create()
+    {
+        $users = User::where('role', 'user')->get();
         $instruments = Instrument::where('stock', '>', 0)->get();
-        return view('admin.orders.create', compact('users', 'instruments')); 
+        return view('admin.orders.create', compact('users', 'instruments'));
     }
 
-    public function store(Request $request) { 
+    public function store(Request $request)
+    {
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'instrument_id' => 'required|array',
@@ -48,7 +53,7 @@ class AdminOrderController extends Controller {
             foreach ($validated['instrument_id'] as $index => $instrumentId) {
                 $quantity = $validated['quantity'][$index];
                 $instrument = Instrument::findOrFail($instrumentId);
-                
+
                 // Snap price at the moment of order
                 $price = $instrument->price;
                 $lineTotal = $price * $quantity;
@@ -77,25 +82,27 @@ class AdminOrderController extends Controller {
             DB::commit();
 
             return redirect()->route('admin.orders.show', $order->id)->with('success', 'Order created successfully.');
-            
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()->with('error', 'Failed to create order: ' . $e->getMessage());
         }
     }
 
-    public function show($id) {
+    public function show($id)
+    {
         // Eager load everything needed for the Order Summary
         $order = Order::with(['user', 'items.instrument'])->findOrFail($id);
         return view('admin.orders.show', compact('order'));
     }
 
-    public function edit($id) {
+    public function edit($id)
+    {
         $order = Order::findOrFail($id);
         return view('admin.orders.edit', compact('order'));
     }
 
-    public function update(Request $request, $id) { 
+    public function update(Request $request, $id)
+    {
         $order = Order::with('items.instrument')->findOrFail($id);
 
         $validated = $request->validate([
@@ -126,14 +133,14 @@ class AdminOrderController extends Controller {
             DB::commit();
 
             return redirect()->route('admin.orders.show', $order->id)->with('success', 'Order updated successfully.');
-            
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()->with('error', 'Failed to update order: ' . $e->getMessage());
         }
     }
 
-    public function destroy($id) {
+    public function destroy($id)
+    {
         Order::destroy($id); // OrderItems will cascade delete via DB constraints if configured, otherwise we should delete items first. Schema says cascadeOnDelete.
         return redirect()->route('admin.orders.index')->with('success', 'Order deleted successfully.');
     }

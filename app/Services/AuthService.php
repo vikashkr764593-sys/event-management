@@ -26,6 +26,11 @@ class AuthService
             return null;
         }
 
+        // Only allow users with the 'user' role to login via API (Mobile App)
+        if ($user->role !== 'user') {
+            return null; 
+        }
+
         $user->update(['last_login_at' => now()]);
 
         return [
@@ -81,9 +86,15 @@ class AuthService
             ['phone' => $phone],
             [
                 'name'     => 'User ' . substr($phone, -4),
+                'role'     => 'user',
                 'password' => Hash::make(str_random(16)), // Random secure password for phone users
             ]
         );
+
+        // Only allow users with the 'user' role to login via API (Mobile App)
+        if ($user->role !== 'user') {
+            return null;
+        }
 
         $user->update(['last_login_at' => now()]);
 

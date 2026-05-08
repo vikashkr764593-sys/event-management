@@ -25,7 +25,7 @@ class AdminSingerController extends Controller {
     }
 
     public function create() { 
-        $users = User::all();
+        $users = User::where('role', 'user')->get();
         return view('admin.singers.create', compact('users')); 
     }
 
@@ -54,7 +54,7 @@ class AdminSingerController extends Controller {
 
     public function edit($id) {
         $singer = Singer::findOrFail($id);
-        $users = User::all();
+        $users = User::where('role', 'user')->get();
         return view('admin.singers.edit', compact('singer', 'users'));
     }
 

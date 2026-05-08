@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -8,20 +9,24 @@ use App\Models\Singer;
 use App\Notifications\BookingStatusNotification;
 use Illuminate\Http\Request;
 
-class AdminBookingController extends Controller {
-    
-    public function index() {
+class AdminBookingController extends Controller
+{
+
+    public function index()
+    {
         $bookings = Booking::with(['user', 'singer'])->latest()->get();
         return view('admin.bookings.index', compact('bookings'));
     }
 
-    public function create() { 
-        $users = User::all();
+    public function create()
+    {
+        $users = User::where('role', 'user')->get();
         $singers = Singer::all();
-        return view('admin.bookings.create', compact('users', 'singers')); 
+        return view('admin.bookings.create', compact('users', 'singers'));
     }
 
-    public function store(Request $request) { 
+    public function store(Request $request)
+    {
         $validated = $request->validate([
             'user_id'    => 'required|exists:users,id',
             'singer_id'  => 'required|exists:singers,id',
@@ -34,9 +39,9 @@ class AdminBookingController extends Controller {
 
         // Check for conflicts
         $conflict = Booking::where('singer_id', $validated['singer_id'])
-                           ->where('event_date', $validated['event_date'])
-                           ->where('time_slot', $validated['time_slot'])
-                           ->exists();
+            ->where('event_date', $validated['event_date'])
+            ->where('time_slot', $validated['time_slot'])
+            ->exists();
 
         if ($conflict) {
             return back()->withInput()->with('error', 'Booking Conflict: This singer is already booked for the selected date and time.');
@@ -47,14 +52,16 @@ class AdminBookingController extends Controller {
         return redirect()->route('admin.bookings.index')->with('success', 'Booking created successfully.');
     }
 
-    public function edit($id) {
+    public function edit($id)
+    {
         $booking = Booking::findOrFail($id);
-        $users = User::all();
+        $users = User::where('role', 'user')->get();
         $singers = Singer::all();
         return view('admin.bookings.edit', compact('booking', 'users', 'singers'));
     }
 
-    public function update(Request $request, $id) { 
+    public function update(Request $request, $id)
+    {
         $booking = Booking::findOrFail($id);
 
         $validated = $request->validate([
@@ -74,10 +81,10 @@ class AdminBookingController extends Controller {
 
         // Check for conflicts
         $conflict = Booking::where('singer_id', $validated['singer_id'])
-                           ->where('event_date', $validated['event_date'])
-                           ->where('time_slot', $validated['time_slot'])
-                           ->where('id', '!=', $id) // Ignore current booking
-                           ->exists();
+            ->where('event_date', $validated['event_date'])
+            ->where('time_slot', $validated['time_slot'])
+            ->where('id', '!=', $id) // Ignore current booking
+            ->exists();
 
         if ($conflict) {
             return back()->withInput()->with('error', 'Booking Conflict: This singer is already booked for the selected date and time.');
@@ -94,7 +101,8 @@ class AdminBookingController extends Controller {
         return redirect()->route('admin.bookings.index')->with('success', 'Booking updated successfully.');
     }
 
-    public function destroy($id) {
+    public function destroy($id)
+    {
         Booking::destroy($id);
         return redirect()->route('admin.bookings.index')->with('success', 'Booking deleted successfully.');
     }
