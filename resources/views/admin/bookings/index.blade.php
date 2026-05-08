@@ -104,6 +104,7 @@
                                     x-transition:leave-end="transform opacity-0 scale-95"
                                     class="absolute right-6 mt-2 w-32 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-10">
                                     <div class="py-1">
+                                        <a href="{{ route('admin.bookings.show', $booking->id) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 text-left">View</a>
                                         <a href="{{ route('admin.bookings.edit', $booking->id) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 text-left">Edit</a>
                                         <form action="{{ route('admin.bookings.destroy', $booking->id) }}" method="POST">
                                             @csrf @method('DELETE')

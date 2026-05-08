@@ -59,7 +59,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Chat
     Route::post('/chat/send', [ChatController::class, 'send']);
-    Route::get('/chat/{booking_id}', [ChatController::class, 'getByBooking']);
+    Route::get('/chat/booking/{booking_id}', [ChatController::class, 'getByBooking']);
+    Route::get('/chat/order/{order_id}', [ChatController::class, 'getByOrder']);
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);

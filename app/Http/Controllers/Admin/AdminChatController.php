@@ -3,120 +3,76 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Conversation;
-use App\Models\Message;
-use App\Models\User;
+use App\Models\Chat;
+use App\Models\Booking;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class AdminChatController extends Controller
 {
     /**
-     * Display the chat interface with all conversations.
+     * Display a listing of all chat threads.
      */
     public function index()
     {
-        $user = Auth::user();
-        
-        // Fetch all conversations the user is participating in
-        $conversations = $user->conversations()
-            ->with(['messages' => function ($query) {
-                $query->latest()->limit(1);
-            }, 'participants'])
-            ->orderBy('last_message_at', 'desc')
-            ->get();
+        // Get unique booking_ids and order_ids from chats
+        $bookingChats = Chat::whereNotNull('booking_id')
+            ->with(['booking.user', 'sender'])
+            ->get()
+            ->groupBy('booking_id');
 
-        return view('admin.chat.index', compact('conversations'));
+        $orderChats = Chat::whereNotNull('order_id')
+            ->with(['order.user', 'sender'])
+            ->get()
+            ->groupBy('order_id');
+
+        return view('admin.chats.index', compact('bookingChats', 'orderChats'));
     }
 
     /**
-     * Fetch message history for a specific conversation.
+     * Show the chat history for a specific context.
      */
-    public function show($id)
+    public function show(Request $request)
     {
-        $conversation = Conversation::with(['messages.sender', 'participants'])
-            ->findOrFail($id);
+        $bookingId = $request->query('booking_id');
+        $orderId = $request->query('order_id');
 
-        // Ensure the current user is a participant
-        if (!$conversation->participants->contains(Auth::id())) {
-            abort(403);
+        $query = Chat::with('sender')->orderBy('created_at', 'asc');
+
+        if ($bookingId) {
+            $chats = $query->where('booking_id', $bookingId)->get();
+            $context = Booking::with('user')->findOrFail($bookingId);
+            $type = 'Booking';
+        } elseif ($orderId) {
+            $chats = $query->where('order_id', $orderId)->get();
+            $context = Order::with('user')->findOrFail($orderId);
+            $type = 'Order';
+        } else {
+            return redirect()->route('admin.chats.index');
         }
 
-        // Mark messages as read
-        $conversation->messages()
-            ->where('sender_id', '!=', Auth::id())
-            ->where('is_read', false)
-            ->update(['is_read' => true]);
-
-        return response()->json([
-            'conversation' => $conversation,
-            'messages' => $conversation->messages
-        ]);
+        return view('admin.chats.show', compact('chats', 'context', 'type'));
     }
 
     /**
-     * Send a new message in a conversation.
+     * Store an admin reply.
      */
-    public function store(Request $request, $id)
+    public function reply(Request $request)
     {
-        $request->validate([
-            'message_text' => 'required|string',
+        $validated = $request->validate([
+            'booking_id' => 'nullable|exists:bookings,id',
+            'order_id'   => 'nullable|exists:orders,id',
+            'message'    => 'required|string|max:2000',
         ]);
 
-        $conversation = Conversation::findOrFail($id);
-
-        // Ensure the current user is a participant
-        if (!$conversation->participants->contains(Auth::id())) {
-            abort(403);
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $message = Message::create([
-                'conversation_id' => $conversation->id,
-                'sender_id' => Auth::id(),
-                'message_text' => $request->message_text,
-            ]);
-
-            $conversation->update([
-                'last_message_at' => now(),
-            ]);
-
-            DB::commit();
-
-            return response()->json($message);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['error' => 'Failed to send message'], 500);
-        }
-    }
-
-    /**
-     * Start a new conversation with a user.
-     */
-    public function startConversation(Request $request)
-    {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
+        Chat::create([
+            'booking_id' => $validated['booking_id'] ?? null,
+            'order_id'   => $validated['order_id'] ?? null,
+            'sender_id'  => Auth::id(),
+            'message'    => $validated['message'],
         ]);
 
-        $recipientId = $request->user_id;
-        $authId = Auth::id();
-
-        // Check if a conversation already exists between these two users (assuming 1-on-1 for now)
-        $conversation = Conversation::whereHas('participants', function ($query) use ($authId) {
-            $query->where('user_id', $authId);
-        })->whereHas('participants', function ($query) use ($recipientId) {
-            $query->where('user_id', $recipientId);
-        })->first();
-
-        if (!$conversation) {
-            $conversation = Conversation::create();
-            $conversation->participants()->attach([$authId, $recipientId]);
-        }
-
-        return redirect()->route('admin.chat.index', ['conversation_id' => $conversation->id]);
+        return back()->with('success', 'Reply sent successfully.');
     }
 }

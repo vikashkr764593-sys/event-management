@@ -27,6 +27,7 @@ class Chat extends Model
      */
     protected $fillable = [
         'booking_id',
+        'order_id',
         'sender_id',
         'message',
     ];
@@ -37,6 +38,14 @@ class Chat extends Model
     public function booking()
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    /**
+     * Get the order this chat is associated with.
+     */
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
     }
 
     /**

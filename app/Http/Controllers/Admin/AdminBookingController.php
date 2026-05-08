@@ -18,6 +18,12 @@ class AdminBookingController extends Controller
         return view('admin.bookings.index', compact('bookings'));
     }
 
+    public function show($id)
+    {
+        $booking = Booking::with(['user', 'singer'])->findOrFail($id);
+        return view('admin.bookings.show', compact('booking'));
+    }
+
     public function create()
     {
         $users = User::where('role', 'user')->get();

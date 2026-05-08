@@ -32,9 +32,8 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
 
     // Chat & Messaging
     Route::get('/chat', [AdminChatController::class, 'index'])->name('chat.index');
-    Route::get('/chat/{id}', [AdminChatController::class, 'show'])->name('chat.show');
-    Route::post('/chat/{id}', [AdminChatController::class, 'store'])->name('chat.store');
-    Route::post('/chat/start', [AdminChatController::class, 'startConversation'])->name('chat.start');
+    Route::get('/chat/history', [AdminChatController::class, 'show'])->name('chat.show');
+    Route::post('/chat/reply', [AdminChatController::class, 'reply'])->name('chat.reply');
     
     // Notifications Management
     Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications');

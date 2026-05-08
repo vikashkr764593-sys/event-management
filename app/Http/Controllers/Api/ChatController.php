@@ -22,6 +22,7 @@ class ChatController extends Controller
         try {
             $chat = Chat::create([
                 'booking_id' => $request->booking_id, 
+                'order_id'   => $request->order_id,
                 'sender_id'  => $request->user()->id, 
                 'message'    => $request->message
             ]);
@@ -37,14 +38,31 @@ class ChatController extends Controller
     
     /**
      * Get all chat messages for a specific booking.
-     *
-     * @param int $booking_id
-     * @return JsonResponse
      */
     public function getByBooking($booking_id): JsonResponse
     {
         try {
             $chats = Chat::where('booking_id', $booking_id)
+                         ->with('sender')
+                         ->orderBy('created_at', 'asc')
+                         ->get();
+
+            return response()->json([
+                'status' => true, 
+                'data'   => ChatResource::collection($chats)
+            ]);
+        } catch (Exception $e) { 
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500); 
+        }
+    }
+
+    /**
+     * Get all chat messages for a specific order.
+     */
+    public function getByOrder($order_id): JsonResponse
+    {
+        try {
+            $chats = Chat::where('order_id', $order_id)
                          ->with('sender')
                          ->orderBy('created_at', 'asc')
                          ->get();
