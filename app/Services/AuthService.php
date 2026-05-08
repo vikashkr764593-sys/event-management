@@ -26,6 +26,8 @@ class AuthService
             return null;
         }
 
+        $user->update(['last_login_at' => now()]);
+
         return [
             'user'  => $user,
             'token' => $user->createToken('mobile_app')->plainTextToken
@@ -82,6 +84,8 @@ class AuthService
                 'password' => Hash::make(str_random(16)), // Random secure password for phone users
             ]
         );
+
+        $user->update(['last_login_at' => now()]);
 
         return [
             'user'  => $user,

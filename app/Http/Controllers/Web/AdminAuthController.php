@@ -34,6 +34,7 @@ class AdminAuthController extends Controller
         if (Auth::attempt($credentials)) {
             // Check if user is an admin
             if (Auth::user()->role === 'admin') {
+                Auth::user()->update(['last_login_at' => now()]);
                 $request->session()->regenerate();
                 return redirect()->intended(route('admin.dashboard'));
             } else {
