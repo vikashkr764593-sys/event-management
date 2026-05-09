@@ -13,12 +13,8 @@
     <div class="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <!-- Logo / Branding -->
         <div class="flex justify-center">
-            <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-lg shadow-brand-500/30">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+            <div class="flex items-center justify-center rounded-2xl bg-white p-3 shadow-lg shadow-black/5 overflow-hidden border border-gray-100 dark:border-gray-800 dark:bg-gray-900">
+                <img src="/images/logo_image.jpeg" alt="Logo" class="max-w-[150px] sm:max-w-[200px] h-auto object-contain" />
             </div>
         </div>
         
