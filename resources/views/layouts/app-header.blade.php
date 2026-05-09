@@ -49,9 +49,8 @@
             </button>
 
             <!-- Logo (mobile only) -->
-            <a href="/" class="xl:hidden">
-                <img class="dark:hidden" src="/images/logo/logo.svg" alt="Logo" />
-                <img class="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" />
+            <a href="/" class="xl:hidden flex items-center justify-center">
+                <img src="/images/logo_image.jpeg" alt="Logo" class="max-w-[100px] h-10 object-contain" />
             </a>
 
             <!-- Application Menu Toggle (mobile only) -->

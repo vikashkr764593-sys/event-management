@@ -6,7 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'Dashboard' }} | TailAdmin - Laravel Tailwind CSS Admin Dashboard Template</title>
+    <title>{{ $title ?? 'Dashboard' }} | {{ config('app.name', 'Event Management') }}</title>
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/images/logo_image.jpeg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/logo_image.jpeg">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/logo_image.jpeg">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/logo_image.jpeg">
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
