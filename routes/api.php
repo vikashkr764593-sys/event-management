@@ -22,6 +22,9 @@ Route::post('/auth/verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/auth/register/initiate', [RegistrationController::class, 'preRegister']);
 Route::post('/auth/register/webhook', [RegistrationController::class, 'webhook']);
 
+
+Route::get('get-pending-users', [UserController::class, 'getPendingUsers']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);

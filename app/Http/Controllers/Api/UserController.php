@@ -7,6 +7,7 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Models\PendingUser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Exception;
@@ -84,4 +85,30 @@ class UserController extends Controller
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }
     }
+
+  public function getPendingUsers(): JsonResponse
+{
+    try {
+
+        $pendingUsers = PendingUser::where('status', 'pending')
+            ->orderBy('created_at', 'DESC')
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'count' => $pendingUsers->count(),
+            'data' => $pendingUsers
+        ], 200);
+
+    } catch (Exception $e) {
+
+        return response()->json([
+            'status' => false,
+            'message' => $e->getMessage()
+        ], 500);
+
+    }
+}
+
+
 }

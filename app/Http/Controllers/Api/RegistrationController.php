@@ -53,7 +53,7 @@ class RegistrationController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'],
-                'password' => $validated['password'], // Hash cast will handle hashing automatically based on model casts
+                'password' => Hash::make($validated['password']),
                 'razorpay_order_id' => $razorpayOrder['id'],
                 'status' => 'pending'
             ]);
@@ -98,34 +98,47 @@ class RegistrationController extends Controller
 
         $payload = $request->all();
 
-        // We only care about order.paid event for registration
-        if (isset($payload['event']) && $payload['event'] === 'order.paid') {
-            $orderId = $payload['payload']['order']['entity']['id'] ?? null;
+        Log::info('Razorpay webhook received', [
+            'event' => $payload['event'] ?? 'unknown',
+            'order_id' => data_get($payload, 'payload.order.entity.id'),
+            'payment_order_id' => data_get($payload, 'payload.payment.entity.order_id'),
+            'signature_header' => $webhookSignature ? 'present' : 'missing',
+        ]);
 
-            if ($orderId) {
-                $pendingUser = PendingUser::where('razorpay_order_id', $orderId)->first();
+        $event = $payload['event'] ?? null;
+        $orderId = null;
 
-                if ($pendingUser && $pendingUser->status === 'pending') {
-                    try {
-                        DB::transaction(function () use ($pendingUser) {
-                            User::create([
-                                'name' => $pendingUser->name,
-                                'email' => $pendingUser->email,
-                                'phone' => $pendingUser->phone,
-                                // we can just pass the already hashed password
-                                'password' => $pendingUser->password, 
-                                'role' => 'user' // Default role
-                            ]);
+        if ($event === 'payment.captured') {
+            $orderId = data_get($payload, 'payload.payment.entity.order_id');
+        } elseif ($event === 'order.paid') {
+            $orderId = data_get($payload, 'payload.order.entity.id');
+        }
 
-                            $pendingUser->update(['status' => 'paid']);
-                        });
-                        Log::info('User registered successfully from webhook for order: ' . $orderId);
-                    } catch (\Exception $e) {
-                        Log::error('Error creating user from webhook: ' . $e->getMessage());
-                        return response()->json(['error' => 'Database transaction failed'], 500);
-                    }
+        if ($orderId) {
+            $pendingUser = PendingUser::where('razorpay_order_id', $orderId)->first();
+
+            if ($pendingUser && $pendingUser->status === 'pending') {
+                try {
+                    DB::transaction(function () use ($pendingUser) {
+                        User::create([
+                            'name' => $pendingUser->name,
+                            'email' => $pendingUser->email,
+                            'phone' => $pendingUser->phone,
+                            'password' => $pendingUser->password,
+                            'role' => 'user',
+                            'status' => 'active'
+                        ]);
+
+                        $pendingUser->update(['status' => 'paid']);
+                    });
+                    Log::info('User registered successfully from webhook for order: ' . $orderId);
+                } catch (\Exception $e) {
+                    Log::error('Error creating user from webhook: ' . $e->getMessage());
+                    return response()->json(['error' => 'Database transaction failed'], 500);
                 }
             }
+        } else {
+            Log::warning('Razorpay webhook ignored: no order id found for event', ['event' => $event]);
         }
 
         return response()->json(['status' => 'success']);
