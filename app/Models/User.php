@@ -40,6 +40,10 @@ class User extends Authenticatable
         'role',
         'status',
         'last_login_at',
+        'razorpay_order_id',
+        'razorpay_payment_id',
+        'payment_status',
+        'razorpay_signature',
     ];
 
     /**
