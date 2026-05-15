@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\PendingUser;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -66,7 +67,6 @@ class RegistrationController extends Controller
                 'currency' => 'INR',
                 'pending_user_id' => $pendingUser->id
             ]);
-
         } catch (\Exception $e) {
             Log::error('Registration Error: ' . $e->getMessage());
             return response()->json(['error' => 'An error occurred during registration. Please try again.'], 500);
@@ -77,128 +77,234 @@ class RegistrationController extends Controller
      * Handle Razorpay webhook to finalize registration.
      * Also handles client-side payment verification.
      */
+
     public function webhook(Request $request)
     {
-        $webhookSecret = env('RAZORPAY_WEBHOOK_SECRET', config('services.razorpay.webhook_secret'));
-        $webhookSignature = $request->header('X-Razorpay-Signature');
-        $isWebhook = !empty($webhookSignature);
-
-        $keyId = env('RAZORPAY_KEY', config('services.razorpay.key'));
-        $keySecret = env('RAZORPAY_SECRET', config('services.razorpay.secret'));
-        $api = new Api($keyId, $keySecret);
-        $payload = $request->all();
+        DB::beginTransaction();
 
         try {
+
+            /*
+        |--------------------------------------------------------------------------
+        | RAZORPAY CONFIG
+        |--------------------------------------------------------------------------
+        */
+
+            $webhookSecret = env('RAZORPAY_WEBHOOK_SECRET');
+
+            $keyId = env(
+                'RAZORPAY_KEY',
+                config('services.razorpay.key')
+            );
+
+            $keySecret = env(
+                'RAZORPAY_SECRET',
+                config('services.razorpay.secret')
+            );
+
+            $api = new Api($keyId, $keySecret);
+
+            /*
+        |--------------------------------------------------------------------------
+        | DETERMINE REQUEST TYPE & VERIFY SIGNATURE
+        |--------------------------------------------------------------------------
+        */
+
+            $webhookSignature = $request->header('X-Razorpay-Signature');
+            $isWebhook = !empty($webhookSignature);
+            $orderId = null;
+
             if ($isWebhook) {
-                // Server-to-server webhook verification
-                if (!$webhookSecret) {
-                    return response()->json(['error' => 'Invalid webhook configuration'], 400);
+                // 1. Handle actual Razorpay Webhook
+                if ($webhookSecret) {
+                    $api->utility->verifyWebhookSignature(
+                        $request->getContent(),
+                        $webhookSignature,
+                        $webhookSecret
+                    );
                 }
-                $api->utility->verifyWebhookSignature($request->getContent(), $webhookSignature, $webhookSecret);
-            } elseif ($request->filled(['razorpay_order_id', 'razorpay_payment_id', 'razorpay_signature'])) {
-                // Client-side payment verification
-                $api->utility->verifyPaymentSignature([
-                    'razorpay_order_id' => $request->input('razorpay_order_id'),
-                    'razorpay_payment_id' => $request->input('razorpay_payment_id'),
-                    'razorpay_signature' => $request->input('razorpay_signature'),
-                ]);
-                
-                // Restructure payload for consistent processing
-                $payload['event'] = 'payment.captured';
-                $payload['payload']['payment']['entity'] = [
-                    'id' => $request->input('razorpay_payment_id'),
-                    'order_id' => $request->input('razorpay_order_id'),
-                    'status' => 'captured',
-                ];
+
+                $payload = json_decode($request->getContent(), true);
+                $orderId = $payload['payload']['payment']['entity']['order_id']
+                    ?? $payload['payload']['order']['entity']['id']
+                    ?? null;
+
+                if (!$orderId) {
+                    throw new \Exception('Order ID not found in webhook payload');
+                }
             } else {
-                return response()->json(['error' => 'Invalid webhook or verification request'], 400);
-            }
-        } catch (SignatureVerificationError $e) {
-            Log::warning('Razorpay Signature Verification Failed.', ['message' => $e->getMessage()]);
-            return response()->json(['error' => 'Invalid signature'], 400);
-        }
-
-        Log::info('Razorpay webhook received', [
-            'event' => $payload['event'] ?? 'unknown',
-            'order_id' => data_get($payload, 'payload.order.entity.id'),
-            'payment_order_id' => data_get($payload, 'payload.payment.entity.order_id'),
-        ]);
-
-        $event = $payload['event'] ?? null;
-        $orderId = null;
-
-        if ($event === 'payment.captured') {
-            $orderId = data_get($payload, 'payload.payment.entity.order_id');
-        } elseif ($event === 'order.paid') {
-            $orderId = data_get($payload, 'payload.order.entity.id');
-        }
-
-        if (!$orderId) {
-            Log::warning('Razorpay webhook ignored: no order id found', ['event' => $event]);
-            return response()->json(['status' => false, 'message' => 'Order ID not found'], 400);
-        }
-
-        $pendingUser = PendingUser::where('razorpay_order_id', $orderId)->first();
-
-        if (!$pendingUser) {
-            Log::warning('Pending user not found for order', ['order_id' => $orderId]);
-            return response()->json(['status' => false, 'message' => 'Pending registration not found'], 404);
-        }
-
-        if ($pendingUser->status !== 'pending') {
-            Log::info('Payment already processed', ['order_id' => $orderId, 'status' => $pendingUser->status]);
-            return response()->json(['status' => true, 'message' => 'Payment already processed'], 200);
-        }
-
-        $paymentId = data_get($payload, 'payload.payment.entity.id');
-        $paymentStatus = data_get($payload, 'payload.payment.entity.status', 'captured');
-        $razorpaySignature = $request->input('razorpay_signature');
-        /** @var User|null $newUser */
-        $newUser = null;
-
-        try {
-            DB::transaction(function () use ($pendingUser, $orderId, $paymentId, $paymentStatus, $razorpaySignature, &$newUser) {
-                // Move pending user data to users table with payment details
-                $newUser = User::create([
-                    'name' => $pendingUser->name,
-                    'email' => $pendingUser->email,
-                    'phone' => $pendingUser->phone,
-                    'password' => $pendingUser->password,
-                    'role' => 'user',
-                    'status' => 'active',
-                    'razorpay_order_id' => $orderId,
-                    'razorpay_payment_id' => $paymentId,
-                    'payment_status' => $paymentStatus,
-                    'razorpay_signature' => $razorpaySignature,
+                // 2. Handle Frontend Callback
+                $request->validate([
+                    'razorpay_order_id' => 'required',
                 ]);
 
-                // Mark pending user as paid
-                $pendingUser->update(['status' => 'paid']);
+                $orderId = $request->razorpay_order_id;
+
+                // Optionally verify the frontend's payment signature if provided
+                if ($request->has('razorpay_signature') && $request->has('razorpay_payment_id')) {
+                    $api->utility->verifyPaymentSignature([
+                        'razorpay_order_id'   => $orderId,
+                        'razorpay_payment_id' => $request->razorpay_payment_id,
+                        'razorpay_signature'  => $request->razorpay_signature
+                    ]);
+                }
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | VERIFY PAYMENT USING ORDER ID
+        |--------------------------------------------------------------------------
+        */
+
+            $razorpayOrder = $api->order->fetch($orderId);
+
+            $payments = $razorpayOrder->payments();
+
+            if (
+                is_object($payments) &&
+                method_exists($payments, 'toArray')
+            ) {
+                $payments = $payments->toArray();
+            }
+
+            $paymentList = $payments['items'] ?? [];
+
+            $payment = collect($paymentList)->first(function ($item) {
+
+                return in_array(
+                    $item['status'] ?? '',
+                    ['captured', 'authorized']
+                );
             });
 
-            Log::info('User registered successfully', ['order_id' => $orderId, 'user_id' => $newUser->id]);
-        } catch (\Exception $e) {
-            Log::error('Error migrating pending user to active user', [
-                'order_id' => $orderId,
-                'message' => $e->getMessage(),
+            if (!$payment) {
+
+                DB::rollBack();
+
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Payment not completed'
+                ], 400);
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | FIND PENDING USER
+        |--------------------------------------------------------------------------
+        */
+
+            $pendingUser = PendingUser::where(
+                'razorpay_order_id',
+                $orderId
+            )->first();
+
+            if (!$pendingUser) {
+
+                DB::rollBack();
+
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Pending user not found'
+                ], 404);
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | CHECK EXISTING USER
+        |--------------------------------------------------------------------------
+        */
+
+            $existingUser = User::where(
+                'email',
+                $pendingUser->email
+            )->first();
+
+            if ($existingUser) {
+
+                Auth::login($existingUser);
+
+                $token = $existingUser
+                    ->createToken('mobile_app')
+                    ->plainTextToken;
+
+                DB::commit();
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Login successful',
+                    'token' => $token,
+                    'user' => new UserResource($existingUser)
+                ]);
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | CREATE USER FROM PENDING USER
+        |--------------------------------------------------------------------------
+        */
+
+            $newUser = User::create([
+                'name' => $pendingUser->name,
+                'email' => $pendingUser->email,
+                'phone' => $pendingUser->phone,
+                'password' => $pendingUser->password,
+                'role' => 'user',
+                'status' => 'active',
+
+                'razorpay_order_id' => $orderId,
+                'razorpay_payment_id' => $payment['id'] ?? null,
+                'payment_status' => $payment['status'] ?? 'paid',
             ]);
-            return response()->json(['error' => 'Failed to complete registration'], 500);
+
+            /*
+        |--------------------------------------------------------------------------
+        | UPDATE PENDING USER STATUS
+        |--------------------------------------------------------------------------
+        */
+
+            $pendingUser->update([
+                'status' => 'paid'
+            ]);
+
+            // Optional
+            // $pendingUser->delete();
+
+            DB::commit();
+
+            /*
+        |--------------------------------------------------------------------------
+        | AUTO LOGIN
+        |--------------------------------------------------------------------------
+        */
+
+            Auth::login($newUser);
+
+            $token = $newUser
+                ->createToken('mobile_app')
+                ->plainTextToken;
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Payment successful & login successful',
+                'token' => $token,
+                'user' => new UserResource($newUser)
+            ]);
+        } catch (SignatureVerificationError $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid webhook signature'
+            ], 400);
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        // For webhook callbacks, return minimal response
-        if ($isWebhook) {
-            return response()->json(['status' => 'success']);
-        }
-
-        // For client-side verification, return token and user details
-        $token = $newUser->createToken('mobile_app')->plainTextToken;
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Registration completed successfully',
-            'token' => $token,
-            'redirect_url' => url('/dashboard'),
-            'user' => new UserResource($newUser),
-        ], 200);
     }
 }
