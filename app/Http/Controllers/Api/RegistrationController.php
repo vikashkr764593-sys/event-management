@@ -80,6 +80,13 @@ class RegistrationController extends Controller
 
     public function webhook(Request $request)
     {
+        Log::info('Registration Webhook/Callback received', [
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'payload' => $request->all(),
+            'is_webhook' => !empty($request->header('X-Razorpay-Signature'))
+        ]);
+
         DB::beginTransaction();
 
         try {
@@ -157,27 +164,56 @@ class RegistrationController extends Controller
         */
 
             $razorpayOrder = $api->order->fetch($orderId);
+            Log::info('Razorpay Order Fetched', ['order_id' => $orderId, 'status' => $razorpayOrder['status']]);
 
-            $payments = $razorpayOrder->payments();
+            $payment = null;
 
-            if (
-                is_object($payments) &&
-                method_exists($payments, 'toArray')
-            ) {
-                $payments = $payments->toArray();
+            // 1. If it's a frontend callback and we have payment_id, fetch it directly
+            if ($request->has('razorpay_payment_id')) {
+                try {
+                    $payment = $api->payment->fetch($request->razorpay_payment_id);
+                    Log::info('Fetched payment via payment_id from request', ['payment_id' => $request->razorpay_payment_id, 'status' => $payment['status']]);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to fetch payment via payment_id', ['error' => $e->getMessage()]);
+                }
             }
 
-            $paymentList = $payments['items'] ?? [];
+            // 2. If it's a webhook, check the payload for payment details
+            if (!$payment && $isWebhook) {
+                $payload = json_decode($request->getContent(), true);
+                $paymentData = $payload['payload']['payment']['entity'] ?? null;
+                if ($paymentData) {
+                    $payment = $paymentData;
+                    Log::info('Found payment in webhook payload', ['payment_id' => $payment['id'], 'status' => $payment['status']]);
+                }
+            }
 
-            $payment = collect($paymentList)->first(function ($item) {
+            // 3. Fallback: Search all payments associated with the order
+            if (!$payment || !in_array($payment['status'] ?? '', ['captured', 'authorized'])) {
+                $paymentsResponse = $api->payment->all(['order_id' => $orderId]);
+                $paymentList = $paymentsResponse['items'] ?? [];
+                
+                Log::info('Fallback: Searching all payments for order', [
+                    'order_id' => $orderId,
+                    'count' => count($paymentList),
+                    'statuses' => collect($paymentList)->pluck('status')->toArray()
+                ]);
 
-                return in_array(
-                    $item['status'] ?? '',
-                    ['captured', 'authorized']
-                );
-            });
+                $payment = collect($paymentList)->first(function ($item) {
+                    return in_array($item['status'] ?? '', ['captured', 'authorized']);
+                });
+            }
 
-            if (!$payment) {
+            // Final check: if order is 'paid', we can proceed even if we didn't find a specific payment object
+            // (though we prefer having the payment object for the ID)
+            $isPaid = ($payment && in_array($payment['status'] ?? '', ['captured', 'authorized'])) || $razorpayOrder['status'] === 'paid';
+
+            if (!$isPaid) {
+                Log::error('Payment verification failed', [
+                    'order_id' => $orderId,
+                    'order_status' => $razorpayOrder['status'],
+                    'payment' => $payment
+                ]);
 
                 DB::rollBack();
 
@@ -252,8 +288,8 @@ class RegistrationController extends Controller
                 'status' => 'active',
 
                 'razorpay_order_id' => $orderId,
-                'razorpay_payment_id' => $payment['id'] ?? null,
-                'payment_status' => $payment['status'] ?? 'paid',
+                'razorpay_payment_id' => isset($payment['id']) ? $payment['id'] : null,
+                'payment_status' => isset($payment['status']) ? $payment['status'] : 'paid',
             ]);
 
             /*
