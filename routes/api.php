@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\ApprovalController;
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/send-otp', [AuthController::class, 'sendOtp']);
 Route::post('/auth/verify-otp', [AuthController::class, 'verifyOtp']);
+// Route::post('/auth/register', [RegistrationController::class, 'preRegister']);
 Route::post('/auth/register/initiate', [RegistrationController::class, 'preRegister']);
 Route::post('/auth/register/webhook', [RegistrationController::class, 'webhook']);
 
@@ -31,6 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Singers (Read-only for General Users, Management for Performers)
     Route::apiResource('singers', SingerController::class)->only(['index', 'show']);
     Route::get('/singers/{id}/availability', [SingerController::class, 'getAvailability']);
+    Route::put('/singer/profile/update', [SingerController::class, 'updateProfile']);
     // Route::post('/singers/{id}/availability', [SingerController::class, 'storeAvailability']);
     // Route::put('/singers/{id}/availability', [SingerController::class, 'updateAvailability']);
 

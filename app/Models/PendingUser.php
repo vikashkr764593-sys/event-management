@@ -8,9 +8,13 @@ class PendingUser extends Model
 {
     protected $fillable = [
         'name',
+        'artist_name',
         'email',
         'phone',
         'password',
+        'city',
+        'category',
+        'profile_image',
         'razorpay_order_id',
         'status',
     ];
