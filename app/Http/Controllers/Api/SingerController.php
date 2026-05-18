@@ -142,10 +142,10 @@ class SingerController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             // Get the singer profile for this user
             $singer = Singer::where('user_id', $user->id)->first();
-            
+
             if (!$singer) {
                 return response()->json([
                     'status' => false,
@@ -188,7 +188,7 @@ class SingerController extends Controller
             if (isset($validated['instagram_link'])) $singer->instagram_link = $validated['instagram_link'];
             if (isset($validated['youtube_link'])) $singer->youtube_link = $validated['youtube_link'];
             if (isset($validated['spotify_link'])) $singer->spotify_link = $validated['spotify_link'];
-
+            
             $singer->save();
 
             return response()->json([
@@ -196,7 +196,6 @@ class SingerController extends Controller
                 'message' => 'Profile updated successfully',
                 'data' => new SingerResource($singer)
             ]);
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'status' => false,

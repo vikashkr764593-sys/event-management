@@ -24,6 +24,7 @@ class AdminUserController extends Controller {
             'name'     => 'required|string|max:255',
             'email'    => 'required|string|email|max:255|unique:users',
             'phone'    => 'nullable|string|max:20',
+            'city'     => 'nullable|string|max:255',
             'password' => 'required|string|min:8',
             'role'     => 'required|string|in:admin,user',
             'status'   => 'required|string|in:active,inactive',
@@ -35,6 +36,7 @@ class AdminUserController extends Controller {
                     'name'     => $validated['name'],
                     'email'    => $validated['email'],
                     'phone'    => $validated['phone'] ?? null,
+                    'city'     => $validated['city'] ?? null,
                     'password' => Hash::make($validated['password']),
                     'role'     => $validated['role'],
                     'status'   => $validated['status'],
@@ -59,6 +61,7 @@ class AdminUserController extends Controller {
             'name'     => 'required|string|max:255',
             'email'    => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'phone'    => 'nullable|string|max:20',
+            'city'     => 'nullable|string|max:255',
             'password' => 'nullable|string|min:8',
             'role'     => 'required|string|in:admin,user',
             'status'   => 'required|string|in:active,inactive',
@@ -69,6 +72,7 @@ class AdminUserController extends Controller {
                 $user->name   = $validated['name'];
                 $user->email  = $validated['email'];
                 $user->phone  = $validated['phone'] ?? null;
+                $user->city   = $validated['city'] ?? null;
                 $user->role   = $validated['role'];
                 $user->status = $validated['status'];
                 

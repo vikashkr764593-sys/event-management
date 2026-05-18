@@ -49,6 +49,16 @@
                             @enderror
                         </div>
 
+                        <!-- City -->
+                        <div>
+                            <label for="city" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">City (Optional)</label>
+                            <input type="text" name="city" id="city" value="{{ old('city') }}" 
+                                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500">
+                            @error('city')
+                                <p class="mt-1 text-sm text-error-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <!-- Password -->
                         <div>
                             <label for="password" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
