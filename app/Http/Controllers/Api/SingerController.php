@@ -153,10 +153,12 @@ class SingerController extends Controller
                 ], 404);
             }
 
+            // Note: In PHP, PUT requests with multipart/form-data are often not parsed.
+            // Ensure the client sends a POST request (or POST with _method=PUT).
+
             $validated = $request->validate([
                 'bio' => 'nullable|string',
-                'languages' => 'nullable|array',
-                'languages.*' => 'string',
+                'languages' => 'nullable', // Accept array or string
                 'experience' => 'nullable|integer',
                 'travel_available' => 'nullable|boolean',
                 'starting_price' => 'nullable|numeric',
@@ -180,14 +182,28 @@ class SingerController extends Controller
             }
 
             // Map and update textual fields
-            if (isset($validated['bio'])) $singer->biography = $validated['bio'];
-            if (isset($validated['languages'])) $singer->languages = $validated['languages'];
-            if (isset($validated['experience'])) $singer->experience_years = $validated['experience'];
-            if (isset($validated['travel_available'])) $singer->travel_available = $validated['travel_available'];
-            if (isset($validated['starting_price'])) $singer->fee = $validated['starting_price'];
-            if (isset($validated['instagram_link'])) $singer->instagram_link = $validated['instagram_link'];
-            if (isset($validated['youtube_link'])) $singer->youtube_link = $validated['youtube_link'];
-            if (isset($validated['spotify_link'])) $singer->spotify_link = $validated['spotify_link'];
+            if ($request->has('bio')) $singer->biography = $validated['bio'];
+            
+            if ($request->has('languages')) {
+                $langs = $validated['languages'];
+                if (is_string($langs)) {
+                    // Split comma-separated string into array
+                    $langs = array_map('trim', explode(',', $langs));
+                }
+                $singer->languages = $langs;
+            }
+
+            if ($request->has('experience')) $singer->experience_years = $validated['experience'];
+            
+            // Boolean values might come as string 'true'/'false' or '1'/'0' in FormData
+            if ($request->has('travel_available')) {
+                $singer->travel_available = filter_var($validated['travel_available'], FILTER_VALIDATE_BOOLEAN);
+            }
+            
+            if ($request->has('starting_price')) $singer->fee = $validated['starting_price'];
+            if ($request->has('instagram_link')) $singer->instagram_link = $validated['instagram_link'];
+            if ($request->has('youtube_link')) $singer->youtube_link = $validated['youtube_link'];
+            if ($request->has('spotify_link')) $singer->spotify_link = $validated['spotify_link'];
             
             $singer->save();
 
