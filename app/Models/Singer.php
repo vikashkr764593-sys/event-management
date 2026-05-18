@@ -37,6 +37,14 @@ class Singer extends Model
         'fee',
         'biography',
         'profile_image',
+        'languages',
+        'travel_available',
+        'instagram_link',
+        'youtube_link',
+        'spotify_link',
+        'cover_image',
+        'sample_audio',
+        'sample_video',
     ];
 
     /**
@@ -47,6 +55,8 @@ class Singer extends Model
     protected $casts = [
         'experience_years' => 'integer',
         'rating'           => 'float',
+        'languages'        => 'array',
+        'travel_available' => 'boolean',
     ];
 
     /**

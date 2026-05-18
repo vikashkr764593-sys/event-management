@@ -11,31 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasColumn('users', 'razorpay_order_id')) {
-            Schema::table('users', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table) {
+            if (!Schema::hasColumn('users', 'razorpay_order_id')) {
                 $table->string('razorpay_order_id')->nullable()->after('password');
-            });
-        }
-        if (!Schema::hasColumn('users', 'razorpay_payment_id')) {
-            Schema::table('users', function (Blueprint $table) {
+            }
+            if (!Schema::hasColumn('users', 'razorpay_payment_id')) {
                 $table->string('razorpay_payment_id')->nullable()->after('razorpay_order_id');
-            });
-        }
-        if (!Schema::hasColumn('users', 'payment_status')) {
-            Schema::table('users', function (Blueprint $table) {
+            }
+            if (!Schema::hasColumn('users', 'payment_status')) {
                 $table->string('payment_status')->nullable()->after('razorpay_payment_id');
-            });
-        }
-        if (!Schema::hasColumn('users', 'razorpay_signature')) {
-            Schema::table('users', function (Blueprint $table) {
+            }
+            if (!Schema::hasColumn('users', 'razorpay_signature')) {
                 $table->text('razorpay_signature')->nullable()->after('payment_status');
-            });
-        }
-        if (!Schema::hasColumn('users', 'status')) {
-            Schema::table('users', function (Blueprint $table) {
+            }
+            if (!Schema::hasColumn('users', 'status')) {
                 $table->string('status')->default('active')->after('role');
-            });
-        }
+            }
+        });
     }
 
     /**

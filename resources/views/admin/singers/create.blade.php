@@ -100,13 +100,102 @@
                             @enderror
                         </div>
 
+                        <!-- Fee / Starting Price -->
+                        <div>
+                            <label for="fee" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Starting Price / Fee</label>
+                            <input type="number" step="0.01" min="0" name="fee" id="fee" value="{{ old('fee') }}" 
+                                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500">
+                            @error('fee')
+                                <p class="mt-1 text-sm text-error-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Languages -->
+                        <div>
+                            <label for="languages" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Languages (Comma separated)</label>
+                            <input type="text" name="languages" id="languages" value="{{ old('languages') }}" placeholder="e.g. English, Hindi, Spanish"
+                                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500">
+                            @error('languages')
+                                <p class="mt-1 text-sm text-error-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Travel Available -->
+                        <div class="flex items-center mt-8">
+                            <input id="travel_available" type="checkbox" name="travel_available" value="1" {{ old('travel_available') ? 'checked' : '' }} class="w-4 h-4 text-brand-600 bg-gray-100 border-gray-300 rounded focus:ring-brand-500 dark:focus:ring-brand-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                            <label for="travel_available" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Available to Travel</label>
+                        </div>
+
+                        <!-- Instagram Link -->
+                        <div>
+                            <label for="instagram_link" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Instagram Profile (URL)</label>
+                            <input type="url" name="instagram_link" id="instagram_link" value="{{ old('instagram_link') }}" 
+                                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500">
+                            @error('instagram_link')
+                                <p class="mt-1 text-sm text-error-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- YouTube Link -->
+                        <div>
+                            <label for="youtube_link" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">YouTube Channel (URL)</label>
+                            <input type="url" name="youtube_link" id="youtube_link" value="{{ old('youtube_link') }}" 
+                                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500">
+                            @error('youtube_link')
+                                <p class="mt-1 text-sm text-error-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Spotify Link -->
+                        <div>
+                            <label for="spotify_link" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Spotify Artist (URL)</label>
+                            <input type="url" name="spotify_link" id="spotify_link" value="{{ old('spotify_link') }}" 
+                                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500">
+                            @error('spotify_link')
+                                <p class="mt-1 text-sm text-error-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <!-- Profile Image -->
-                        <div class="col-span-1 md:col-span-2">
+                        <div class="col-span-1 md:col-span-1">
                             <label for="profile_image" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Profile Image</label>
                             <input type="file" name="profile_image" id="profile_image" accept="image/jpeg,image/png,image/webp"
                                 class="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-gray-700 dark:file:text-white transition">
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">PNG, JPG, or WEBP up to 2MB.</p>
                             @error('profile_image')
+                                <p class="mt-1 text-sm text-error-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Cover Image -->
+                        <div class="col-span-1 md:col-span-1">
+                            <label for="cover_image" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Cover Image</label>
+                            <input type="file" name="cover_image" id="cover_image" accept="image/jpeg,image/png,image/webp"
+                                class="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-gray-700 dark:file:text-white transition">
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">PNG, JPG, or WEBP up to 5MB.</p>
+                            @error('cover_image')
+                                <p class="mt-1 text-sm text-error-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Sample Audio -->
+                        <div class="col-span-1 md:col-span-1">
+                            <label for="sample_audio" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Sample Audio</label>
+                            <input type="file" name="sample_audio" id="sample_audio" accept="audio/mpeg,audio/wav"
+                                class="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-gray-700 dark:file:text-white transition">
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">MP3 or WAV up to 10MB.</p>
+                            @error('sample_audio')
+                                <p class="mt-1 text-sm text-error-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Sample Video -->
+                        <div class="col-span-1 md:col-span-1">
+                            <label for="sample_video" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Sample Video</label>
+                            <input type="file" name="sample_video" id="sample_video" accept="video/mp4,video/quicktime,video/x-msvideo"
+                                class="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-gray-700 dark:file:text-white transition">
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">MP4, MOV, or AVI up to 50MB.</p>
+                            @error('sample_video')
                                 <p class="mt-1 text-sm text-error-500">{{ $message }}</p>
                             @enderror
                         </div>

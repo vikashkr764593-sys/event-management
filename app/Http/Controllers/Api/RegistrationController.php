@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Razorpay\Api\Api;
 use Razorpay\Api\Errors\SignatureVerificationError;
-
+use App\Models\Singer;
 class RegistrationController extends Controller
 {
     /**
@@ -22,10 +22,14 @@ class RegistrationController extends Controller
     public function preRegister(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'full_name' => 'required|string|max:255',
+            'artist_name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
             'email' => 'required|string|email|max:255|unique:users,email|unique:pending_users,email',
-            'phone' => 'nullable|string|max:20',
             'password' => 'required|string|min:8',
+            'city' => 'required|string|max:255',
+            'category' => 'required|string|max:255',
+            'profile_image' => 'required|image|max:5120', // Max 5MB
         ]);
 
         try {
@@ -51,11 +55,20 @@ class RegistrationController extends Controller
 
             $razorpayOrder = $api->order->create($orderData);
 
+            $profileImagePath = null;
+            if ($request->hasFile('profile_image')) {
+                $profileImagePath = $request->file('profile_image')->store('profiles/pending', 'public');
+            }
+
             $pendingUser = PendingUser::create([
-                'name' => $validated['name'],
+                'name' => $validated['full_name'],
+                'artist_name' => $validated['artist_name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'],
                 'password' => Hash::make($validated['password']),
+                'city' => $validated['city'],
+                'category' => $validated['category'],
+                'profile_image' => $profileImagePath,
                 'razorpay_order_id' => $razorpayOrder['id'],
                 'status' => 'pending'
             ]);
@@ -284,12 +297,14 @@ class RegistrationController extends Controller
                 'email' => $pendingUser->email,
                 'phone' => $pendingUser->phone,
                 'password' => $pendingUser->password,
+                'city' => $pendingUser->city,
+                'profile_picture' => $pendingUser->profile_image,
                 'role' => 'user',
                 'status' => 'active',
 
                 'razorpay_order_id' => $orderId,
-                'razorpay_payment_id' => isset($payment['id']) ? $payment['id'] : null,
-                'payment_status' => isset($payment['status']) ? $payment['status'] : 'paid',
+                'razorpay_payment_id' => $payment['id'] ?? null,
+                'payment_status' => $payment['status'] ?? 'paid',
             ]);
 
             /*
