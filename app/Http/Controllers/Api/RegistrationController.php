@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Razorpay\Api\Api;
 use Razorpay\Api\Errors\SignatureVerificationError;
 use App\Models\Singer;
+
 class RegistrationController extends Controller
 {
     /**
@@ -205,7 +206,7 @@ class RegistrationController extends Controller
             if (!$payment || !in_array($payment['status'] ?? '', ['captured', 'authorized'])) {
                 $paymentsResponse = $api->payment->all(['order_id' => $orderId]);
                 $paymentList = $paymentsResponse['items'] ?? [];
-                
+
                 Log::info('Fallback: Searching all payments for order', [
                     'order_id' => $orderId,
                     'count' => count($paymentList),
@@ -270,6 +271,17 @@ class RegistrationController extends Controller
 
             if ($existingUser) {
 
+                // Create or update the Singer profile for the existing user
+                Singer::updateOrCreate(
+                    ['user_id' => $existingUser->id],
+                    [
+                        'name' => $pendingUser->name,
+                        'stage_name' => $pendingUser->artist_name,
+                        'genre' => $pendingUser->category,
+                        'profile_image' => $pendingUser->profile_image,
+                    ]
+                );
+
                 Auth::login($existingUser);
 
                 $token = $existingUser
@@ -306,6 +318,17 @@ class RegistrationController extends Controller
                 'razorpay_payment_id' => $payment['id'] ?? null,
                 'payment_status' => $payment['status'] ?? 'paid',
             ]);
+
+            // Update the automatically created Singer Profile
+            Singer::updateOrCreate(
+                ['user_id' => $newUser->id],
+                [
+                    'name' => $pendingUser->name,
+                    'stage_name' => $pendingUser->artist_name,
+                    'genre' => $pendingUser->category,
+                    'profile_image' => $pendingUser->profile_image,
+                ]
+            );
 
             /*
         |--------------------------------------------------------------------------

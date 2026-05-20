@@ -122,4 +122,27 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Conversation::class, 'conversation_user');
     }
+
+    /**
+     * Get the singer profile associated with the user.
+     */
+    public function singer()
+    {
+        return $this->hasOne(Singer::class);
+    }
+
+    /**
+     * The "booted" method of the model.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        static::created(function ($user) {
+            // Automatically create a singer profile when a user is created
+            $user->singer()->create([
+                'name' => $user->name,
+            ]);
+        });
+    }
 }
